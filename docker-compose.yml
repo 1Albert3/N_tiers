@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./todo-api-Backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - APP_KEY=base64:$(openssl rand -base64 32)
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=todo_db
+      - DB_USERNAME=todo_user
+      - DB_PASSWORD=todo_password
+      - JWT_SECRET=your-jwt-secret-key
+    depends_on:
+      - postgres
+    networks:
+      - todo-network
+    restart: unless-stopped
+
+
+  postgres:
+    build:
+      context: ./database-tier
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=todo_db
+      - POSTGRES_USER=todo_user
+      - POSTGRES_PASSWORD=todo_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database-tier/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - todo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo_user -d todo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+
+networks:
+  todo-network:
+    driver: bridge
