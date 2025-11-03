@@ -2,11 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copie des fichiers
+# Copie du package.json pour le cache
+COPY package*.json ./
+
+# Installation des dépendances
+RUN npm install
+
+# Copie du reste des fichiers
 COPY . .
 
-# Installation et build
-RUN npm install && npm run build
+# Build de l'application
+RUN npm run build
 
 # Installation du serveur statique
 RUN npm install -g serve
