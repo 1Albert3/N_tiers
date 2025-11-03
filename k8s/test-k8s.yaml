@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: todopro-test
+  namespace: todopro
+  labels:
+    app: test
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test-runner
+      image: curlimages/curl:latest
+      command: ["/bin/sh"]
+      args:
+        - -c
+        - |
+          echo "🧪 Test TodoPro K8s Configuration"
+          echo "=================================="
+          
+          # Test 1: Vérifier que PostgreSQL est accessible
+          echo "Test 1: PostgreSQL connectivity"
+          if nc -z postgres-service.todopro.svc.cluster.local 5432; then
+            echo "✅ PostgreSQL accessible"
+          else
+            echo "❌ PostgreSQL non accessible"
+            exit 1
+          fi
+          
+          # Test 2: Vérifier que le backend répond
+          echo "Test 2: Backend API health check"
+          if curl -f http://backend-service.todopro.svc.cluster.local:8000/api/health; then
+            echo "✅ Backend API accessible"
+          else
+            echo "❌ Backend API non accessible"
+            exit 1
+          fi
+          
+          # Test 3: Vérifier que le frontend répond
+          echo "Test 3: Frontend accessibility"
+          if curl -f http://frontend-service.todopro.svc.cluster.local; then
+            echo "✅ Frontend accessible"
+          else
+            echo "❌ Frontend non accessible"
+            exit 1
+          fi
+          
+          echo "🎉 Tous les tests K8s passés avec succès!"
+      resources:
+        requests:
+          memory: "64Mi"
+          cpu: "100m"
+        limits:
+          memory: "128Mi"
+          cpu: "200m"

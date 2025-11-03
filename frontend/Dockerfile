@@ -1,18 +1,14 @@
-FROM node:18-alpine
-
+# Build stage
+FROM node:18-alpine AS builder
 WORKDIR /app
-
-# Copie des fichiers
+COPY package*.json ./
+RUN npm install
 COPY . .
+RUN npm run build
 
-# Installation et build
-RUN npm install && npm run build
-
-# Installation du serveur statique
-RUN npm install -g serve
-
-# Exposer le port
+# Production stage
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 3000
-
-# Démarrer l'application
-CMD ["serve", "-s", "build", "-l", "3000"]
+CMD ["nginx", "-g", "daemon off;"]
