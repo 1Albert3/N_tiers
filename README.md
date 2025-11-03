@@ -47,12 +47,12 @@
 
 ### 🔧 Technologies utilisées
 
-| Composant | Technologies |
-|-----------|-------------|
-| **Frontend** | React 18, TypeScript, Tailwind CSS, Nginx |
-| **Backend** | Laravel 12, PHP 8.2, JWT Auth, PostgreSQL |
-| **DevOps** | Docker, Kubernetes, GitHub Actions |
-| **Base de données** | PostgreSQL 15 |
+| Composant           | Technologies                              |
+| ------------------- | ----------------------------------------- |
+| **Frontend**        | React 18, TypeScript, Tailwind CSS, Nginx |
+| **Backend**         | Laravel 12, PHP 8.2, JWT Auth, PostgreSQL |
+| **DevOps**          | Docker, Kubernetes, GitHub Actions        |
+| **Base de données** | PostgreSQL 15                             |
 
 ---
 
@@ -65,6 +65,7 @@
 #### **Étape 1 : Installation des Prérequis**
 
 ##### 1.1 Git pour Windows
+
 ```bash
 # Télécharger Git depuis :
 https://git-scm.com/download/win
@@ -75,6 +76,7 @@ git --version
 ```
 
 ##### 1.2 Docker Desktop
+
 ```bash
 # Télécharger Docker Desktop depuis :
 https://www.docker.com/products/docker-desktop/
@@ -90,6 +92,7 @@ https://www.docker.com/products/docker-desktop/
 ```
 
 ##### 1.3 Vérification WSL 2 (si nécessaire)
+
 ```bash
 # Ouvrir PowerShell en tant qu'administrateur
 wsl --install
@@ -102,6 +105,7 @@ wsl --list --verbose
 #### **Étape 2 : Récupération du Code**
 
 ##### 2.1 Cloner le Repository
+
 ```bash
 # Ouvrir Git Bash ou Command Prompt
 # Naviguer vers le dossier souhaité (ex: C:\Projects)
@@ -115,10 +119,11 @@ cd todopro
 ```
 
 ##### 2.2 Structure du Projet
+
 ```
 todopro/
 ├── frontend/                 # Application React
-├── todo-api-Backend/        # API Laravel
+├── backend/        # API Laravel
 ├── database-tier/           # Configuration PostgreSQL
 ├── k8s/                     # Manifests Kubernetes
 ├── .github/workflows/       # Pipeline CI/CD
@@ -130,6 +135,7 @@ todopro/
 #### **Étape 3 : Démarrage de l'Application**
 
 ##### 3.1 Vérification Docker
+
 ```bash
 # Vérifier que Docker fonctionne
 docker --version
@@ -140,6 +146,7 @@ docker run hello-world
 ```
 
 ##### 3.2 Lancement de l'Application
+
 ```bash
 # Dans le dossier du projet
 cd C:\Projects\todopro
@@ -153,24 +160,27 @@ docker-compose ps
 ```
 
 ##### 3.3 Vérification des Services
+
 ```bash
 # Tous les services doivent être "Up"
 NAME                       STATUS
 todopro-frontend-1         Up
-todopro-backend-1          Up  
+todopro-backend-1          Up
 todopro-postgres-1         Up
 ```
 
 #### **Étape 4 : Accès à l'Application**
 
 ##### 4.1 URLs d'Accès
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Application** | http://localhost:3000 | Interface utilisateur |
-| **API** | http://localhost:8000/api | Backend Laravel |
-| **Health Check** | http://localhost:8000/api/health | Vérification API |
+
+| Service          | URL                              | Description           |
+| ---------------- | -------------------------------- | --------------------- |
+| **Application**  | http://localhost:3000            | Interface utilisateur |
+| **API**          | http://localhost:8000/api        | Backend Laravel       |
+| **Health Check** | http://localhost:8000/api/health | Vérification API      |
 
 ##### 4.2 Premier Test
+
 1. **Ouvrir le navigateur** : http://localhost:3000
 2. **Créer un compte** : Cliquer sur "Créer un compte"
 3. **Se connecter** : Utiliser les identifiants créés
@@ -179,6 +189,7 @@ todopro-postgres-1         Up
 #### **Étape 5 : Commandes Utiles**
 
 ##### 5.1 Gestion des Services
+
 ```bash
 # Voir les logs en temps réel
 docker-compose logs -f
@@ -199,6 +210,7 @@ docker-compose up -d
 ```
 
 ##### 5.2 Nettoyage
+
 ```bash
 # Arrêter et supprimer les conteneurs
 docker-compose down
@@ -213,9 +225,11 @@ docker system prune -a
 #### **Étape 6 : Résolution des Problèmes**
 
 ##### 6.1 Docker ne démarre pas
+
 **Symptômes** : Erreur "Docker daemon not running"
 
 **Solutions** :
+
 ```bash
 # 1. Redémarrer Docker Desktop
 # 2. Vérifier WSL 2
@@ -226,9 +240,11 @@ wsl --update
 ```
 
 ##### 6.2 Port déjà utilisé
+
 **Symptômes** : Erreur "Port 3000 is already in use"
 
 **Solutions** :
+
 ```bash
 # Trouver le processus
 netstat -ano | findstr :3000
@@ -240,9 +256,11 @@ taskkill /PID 1234 /F
 ```
 
 ##### 6.3 Erreur de base de données
+
 **Symptômes** : "Connection refused" ou "Database not found"
 
 **Solutions** :
+
 ```bash
 # Recréer la base de données
 docker-compose down -v
@@ -253,9 +271,11 @@ docker-compose logs postgres
 ```
 
 ##### 6.4 Images non trouvées
+
 **Symptômes** : "Image not found" ou "Pull access denied"
 
 **Solutions** :
+
 ```bash
 # Construire les images localement
 docker-compose build
@@ -294,12 +314,12 @@ docker-compose logs -f
 
 ### 📊 Services disponibles
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Frontend** | http://localhost:3000 | Interface utilisateur React |
-| **Backend** | http://localhost:8000 | API Laravel |
-| **API Docs** | http://localhost:8000/api | Documentation API |
-| **Database** | localhost:5432 | PostgreSQL (accès interne) |
+| Service      | URL                       | Description                 |
+| ------------ | ------------------------- | --------------------------- |
+| **Frontend** | http://localhost:3000     | Interface utilisateur React |
+| **Backend**  | http://localhost:8000     | API Laravel                 |
+| **API Docs** | http://localhost:8000/api | Documentation API           |
+| **Database** | localhost:5432            | PostgreSQL (accès interne)  |
 
 ### 🛠️ Commandes utiles
 
@@ -343,7 +363,7 @@ build-images.bat
 
 # Ou manuellement :
 docker build -t todopro-frontend:latest ./frontend/
-docker build -t todopro-backend:latest ./todo-api-Backend/
+docker build -t todopro-backend:latest ./backend/
 ```
 
 ### 🚀 Déploiement sur Kubernetes
@@ -399,11 +419,11 @@ KUBE_CONFIG_PROD=base64-encoded-kubeconfig
 
 #### 🔄 Workflow automatique
 
-| Événement | Actions |
-|-----------|---------|
-| **Push sur `main`** | Tests → Build → Deploy Production |
-| **Push sur `develop`** | Tests → Build → Deploy Staging |
-| **Pull Request** | Tests uniquement |
+| Événement              | Actions                           |
+| ---------------------- | --------------------------------- |
+| **Push sur `main`**    | Tests → Build → Deploy Production |
+| **Push sur `develop`** | Tests → Build → Deploy Staging    |
+| **Pull Request**       | Tests uniquement                  |
 
 ### 📊 Étapes du pipeline
 
@@ -423,14 +443,16 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 🏗️ Phases de Développement
 
 #### **Phase 1 : Analyse et Architecture**
+
 - **Durée** : 2 jours
-- **Activités** : 
+- **Activités** :
   - Analyse de l'application existante
   - Conception de l'architecture 3-tiers
   - Choix des technologies (Docker, Kubernetes, GitHub Actions)
 - **Livrables** : Schéma d'architecture, spécifications techniques
 
 #### **Phase 2 : Conteneurisation Docker**
+
 - **Durée** : 3 jours
 - **Activités** :
   - Création des Dockerfiles optimisés
@@ -442,6 +464,7 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
   - Configuration des réseaux Docker
 
 #### **Phase 3 : Orchestration Kubernetes**
+
 - **Durée** : 4 jours
 - **Activités** :
   - Création des manifests Kubernetes
@@ -453,6 +476,7 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
   - Mise en place de l'auto-scaling (HPA)
 
 #### **Phase 4 : Pipeline CI/CD**
+
 - **Durée** : 3 jours
 - **Activités** :
   - Configuration GitHub Actions
@@ -466,21 +490,25 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 🚧 Contraintes et Défis Techniques
 
 #### **1. Compatibilité des Versions**
+
 - **Problème** : Incompatibilités entre Laravel 12 et certaines extensions PHP
 - **Solution** : Mise à jour vers PHP 8.2 et adaptation des Dockerfiles
 - **Impact** : Retard de 1 jour sur le planning
 
 #### **2. Configuration des Clés de Chiffrement**
+
 - **Problème** : Erreurs de chiffrement Laravel avec APP_KEY invalide
 - **Solution** : Génération automatique des clés dans le pipeline
 - **Leçon apprise** : Importance de la gestion sécurisée des secrets
 
 #### **3. Gestion des Volumes Kubernetes**
+
 - **Problème** : Perte de données PostgreSQL lors des redémarrages
 - **Solution** : Implémentation de StatefulSets avec PersistentVolumes
 - **Impact** : Architecture plus robuste mais complexité accrue
 
 #### **4. Optimisation des Images Docker**
+
 - **Problème** : Images trop volumineuses (>2GB initialement)
 - **Solution** : Multi-stage builds et images Alpine Linux
 - **Résultat** : Réduction de 70% de la taille des images
@@ -488,18 +516,21 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 📈 Métriques et Performance
 
 #### **Avant DevOps**
+
 - **Déploiement** : Manuel, 2-3 heures
 - **Tests** : Manuels, non systématiques
 - **Rollback** : Difficile, 1-2 heures
 - **Environnements** : Développement uniquement
 
 #### **Après DevOps**
+
 - **Déploiement** : Automatique, 10-15 minutes
 - **Tests** : Automatisés, 5 minutes
 - **Rollback** : Automatique, 2 minutes
 - **Environnements** : Dev, Staging, Production
 
 #### **Gains Mesurés**
+
 - ⚡ **Temps de déploiement** : -85%
 - 🔒 **Sécurité** : +100% (scan automatique)
 - 🚀 **Fiabilité** : +90% (tests automatisés)
@@ -508,12 +539,14 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 🎓 Apprentissages et Bonnes Pratiques
 
 #### **Techniques**
+
 1. **Infrastructure as Code** : Tout doit être versionné
 2. **Immutabilité** : Images Docker non modifiables
 3. **Observabilité** : Logs, métriques, traces essentiels
 4. **Sécurité** : Scan continu, secrets chiffrés
 
 #### **Organisationnelles**
+
 1. **Documentation** : README détaillé indispensable
 2. **Tests** : Couverture minimale 80%
 3. **Rollback** : Plan de retour arrière systématique
@@ -522,18 +555,21 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 🔮 Évolutions Futures
 
 #### **Court terme (1-3 mois)**
+
 - [ ] Monitoring avec Prometheus/Grafana
 - [ ] Centralisation des logs (ELK Stack)
 - [ ] Backup automatique de la base de données
 - [ ] Tests de charge automatisés
 
 #### **Moyen terme (3-6 mois)**
+
 - [ ] Service Mesh avec Istio
 - [ ] GitOps avec ArgoCD
 - [ ] Multi-cloud deployment
 - [ ] Disaster Recovery Plan
 
 #### **Long terme (6-12 mois)**
+
 - [ ] Machine Learning pour l'optimisation
 - [ ] Chaos Engineering
 - [ ] Zero-downtime deployments
@@ -542,11 +578,13 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 💡 Recommandations
 
 #### **Pour l'équipe de développement**
+
 1. **Formation** : Investir dans la formation DevOps
 2. **Outils** : Standardiser sur Docker/Kubernetes
 3. **Culture** : Adopter la philosophie "You build it, you run it"
 
 #### **Pour l'organisation**
+
 1. **Investissement** : Budget pour l'infrastructure cloud
 2. **Processus** : Intégrer DevOps dans le cycle de développement
 3. **Sécurité** : Former les équipes aux bonnes pratiques
@@ -558,6 +596,7 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### ❌ Problèmes courants
 
 #### **Docker ne démarre pas**
+
 ```bash
 # Vérifier que Docker Desktop est démarré
 docker --version
@@ -567,6 +606,7 @@ docker --version
 ```
 
 #### **Erreur "Port already in use"**
+
 ```bash
 # Trouver le processus utilisant le port
 netstat -ano | findstr :3000
@@ -576,6 +616,7 @@ netstat -ano | findstr :8000
 ```
 
 #### **Base de données non accessible**
+
 ```bash
 # Vérifier que PostgreSQL est démarré
 docker-compose ps postgres
@@ -586,6 +627,7 @@ docker-compose up -d
 ```
 
 #### **Images Docker non trouvées**
+
 ```bash
 # Construire les images localement
 docker-compose build
@@ -641,19 +683,22 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 
 ---
 
-**🎉 Félicitations ! Vous avez maintenant une application TodoPro complètement fonctionnelle avec une infrastructure DevOps moderne !***
+**🎉 Félicitations ! Vous avez maintenant une application TodoPro complètement fonctionnelle avec une infrastructure DevOps moderne !\***
+
 - **Déploiement** : Manuel, 2-3 heures
 - **Tests** : Manuels, non systématiques
 - **Rollback** : Difficile, 1-2 heures
 - **Environnements** : Développement uniquement
 
 #### **Après DevOps**
+
 - **Déploiement** : Automatique, 10-15 minutes
 - **Tests** : Automatisés, 5 minutes
 - **Rollback** : Automatique, 2 minutes
 - **Environnements** : Dev, Staging, Production
 
 #### **Gains Mesurés**
+
 - ⚡ **Temps de déploiement** : -85%
 - 🔒 **Sécurité** : +100% (scan automatique)
 - 🚀 **Fiabilité** : +90% (tests automatisés)
@@ -662,12 +707,14 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ### 🎓 Apprentissages et Bonnes Pratiques
 
 #### **Techniques**
+
 1. **Infrastructure as Code** : Tout doit être versionné
 2. **Immutabilité** : Images Docker non modifiables
 3. **Observabilité** : Logs, métriques, traces essentiels
 4. **Sécurité** : Scan continu, secrets chiffrés
 
 #### **Organisationnelles**
+
 1. **Documentation** : README détaillé indispensable
 2. **Tests** : Couverture minimale 80%
 3. **Rollback** : Plan de retour arrière systématique
@@ -676,18 +723,21 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ### 🔮 Évolutions Futures
 
 #### **Court terme (1-3 mois)**
+
 - [ ] Monitoring avec Prometheus/Grafana
 - [ ] Centralisation des logs (ELK Stack)
 - [ ] Backup automatique de la base de données
 - [ ] Tests de charge automatisés
 
 #### **Moyen terme (3-6 mois)**
+
 - [ ] Service Mesh avec Istio
 - [ ] GitOps avec ArgoCD
 - [ ] Multi-cloud deployment
 - [ ] Disaster Recovery Plan
 
 #### **Long terme (6-12 mois)**
+
 - [ ] Machine Learning pour l'optimisation
 - [ ] Chaos Engineering
 - [ ] Zero-downtime deployments
@@ -696,11 +746,13 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ### 💡 Recommandations
 
 #### **Pour l'équipe de développement**
+
 1. **Formation** : Investir dans la formation DevOps
 2. **Outils** : Standardiser sur Docker/Kubernetes
 3. **Culture** : Adopter la philosophie "You build it, you run it"
 
 #### **Pour l'organisation**
+
 1. **Investissement** : Budget pour l'infrastructure cloud
 2. **Processus** : Intégrer DevOps dans le cycle de développement
 3. **Sécurité** : Former les équipes aux bonnes pratiques
@@ -712,6 +764,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 ### ❌ Problèmes courants
 
 #### **Docker ne démarre pas**
+
 ```bash
 # Vérifier que Docker Desktop est démarré
 docker --version
@@ -721,6 +774,7 @@ docker --version
 ```
 
 #### **Erreur "Port already in use"**
+
 ```bash
 # Trouver le processus utilisant le port
 netstat -ano | findstr :3000
@@ -730,6 +784,7 @@ netstat -ano | findstr :8000
 ```
 
 #### **Base de données non accessible**
+
 ```bash
 # Vérifier que PostgreSQL est démarré
 docker-compose ps postgres
@@ -740,6 +795,7 @@ docker-compose up -d
 ```
 
 #### **Images Docker non trouvées**
+
 ```bash
 # Construire les images localement
 docker-compose build
