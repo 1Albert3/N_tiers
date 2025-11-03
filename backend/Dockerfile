@@ -18,7 +18,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 
 # Copy application
 COPY . .
-RUN composer dump-autoloader --optimize
+RUN composer dump-autoload --optimize
 
 # Set permissions
 RUN chown -R laravel:laravel /var/www/html \

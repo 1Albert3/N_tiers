@@ -22,7 +22,7 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
-      - APP_KEY=base64:SGVsbG9Xb3JsZEhlbGxvV29ybGRIZWxsb1dvcmxkSGVsbG9Xb3JsZA==
+      - APP_KEY=base64:YWJjZGVmZ2hpams1bG1ub3BxcnN0dXZ3eHl6MTIzNDU2Nzg5MA==
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
