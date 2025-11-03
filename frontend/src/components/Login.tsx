@@ -1,145 +1,145 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import StyledInput from './StyledInput';
 
 const Login: React.FC = () => {
   const auth = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [loading, setLoading] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'L\'email est requis';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Format d\'email invalide';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Le mot de passe est requis';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     setLoading(true);
-    setError(null);
     
     try {
-      await auth.signIn(email, password);
-      navigate('/tasks');
+      await auth.signIn(formData.email, formData.password);
+      navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Échec de la connexion');
+      setErrors({ general: err.message || 'Échec de la connexion' });
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const updateField = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, var(--primary-light) 0%, var(--gray-50) 100%)'
-    }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px', margin: 'var(--space-4)' }}>
-        <div className="card-body" style={{ padding: 'var(--space-8)' }}>
-          {/* Logo/Brand */}
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
-            <div style={{ 
-              fontSize: '2rem', 
-              fontWeight: '800', 
-              color: 'var(--primary)',
-              marginBottom: 'var(--space-2)'
-            }}>
-              Todo<span style={{ color: 'var(--gray-700)' }}>Pro</span>
-            </div>
-            <p style={{ color: 'var(--gray-600)' }}>Connectez-vous à votre compte</p>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h1 className="auth-title">Bon retour ! 👋</h1>
+          <p className="auth-subtitle">Connectez-vous à votre compte TodoPro</p>
+        </div>
+
+        {errors.general && (
+          <div className="error-message">
+            {errors.general}
           </div>
+        )}
 
-          {/* Error Message */}
-          {error && (
-            <div style={{ 
-              background: 'var(--error)', 
-              color: 'white', 
-              padding: 'var(--space-3)', 
-              borderRadius: 'var(--radius)',
-              marginBottom: 'var(--space-4)',
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)'
-            }}>
-              ⚠️ {error}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="auth-form">
+          <StyledInput
+            type="email"
+            label="Adresse email"
+            value={formData.email}
+            onChange={(value) => updateField('email', value)}
+            required
+            disabled={loading}
+            error={errors.email}
+            icon="📧"
+          />
 
-          <form onSubmit={submit}>
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">
-                Adresse email
-              </label>
-              <input 
-                id="email"
-                className="form-input"
-                type="email" 
-                placeholder="votre@email.com"
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                required 
-                disabled={loading}
-              />
-            </div>
+          <StyledInput
+            type="password"
+            label="Mot de passe"
+            value={formData.password}
+            onChange={(value) => updateField('password', value)}
+            required
+            disabled={loading}
+            error={errors.password}
+            icon="🔒"
+          />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="password">
-                Mot de passe
-              </label>
-              <input 
-                id="password"
-                className="form-input"
-                type="password" 
-                placeholder="••••••••"
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-                disabled={loading}
-              />
-            </div>
-
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={loading || !email || !password}
-              style={{ 
-                width: '100%', 
-                marginTop: 'var(--space-4)',
-                opacity: loading || !email || !password ? 0.6 : 1
-              }}
-            >
-              {loading ? (
-                <>
-                  <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
-                  Connexion...
-                </>
-              ) : (
-                '🔐 Se connecter'
-              )}
-            </button>
-          </form>
-
-          {/* Footer */}
           <div style={{ 
-            textAlign: 'center', 
-            marginTop: 'var(--space-6)',
-            paddingTop: 'var(--space-4)',
-            borderTop: '1px solid var(--gray-200)'
+            display: 'flex', 
+            justifyContent: 'flex-end', 
+            marginBottom: 'var(--space-4)' 
           }}>
-            <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
-              Pas encore de compte ?{' '}
-              <Link 
-                to="/register" 
-                style={{ 
-                  color: 'var(--primary)', 
-                  textDecoration: 'none',
-                  fontWeight: '500'
-                }}
-              >
-                Créer un compte
-              </Link>
-            </p>
+            <Link 
+              to="/forgot-password" 
+              className="auth-link"
+              style={{ fontSize: '0.875rem' }}
+            >
+              Mot de passe oublié ?
+            </Link>
           </div>
+
+          <button 
+            type="submit" 
+            disabled={loading || !formData.email || !formData.password} 
+            className="btn-auth"
+          >
+            {loading ? (
+              <>
+                <span style={{ marginRight: '8px' }}>⏳</span>
+                Connexion en cours...
+              </>
+            ) : (
+              <>
+                <span style={{ marginRight: '8px' }}>🚀</span>
+                Se connecter
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="auth-divider">
+          ou
+        </div>
+
+        <div className="auth-footer">
+          <p>
+            Pas encore de compte ?{' '}
+            <Link to="/register" className="auth-link">
+              Créer un compte
+            </Link>
+          </p>
+          <p style={{ marginTop: 'var(--space-3)' }}>
+            <Link to="/" className="auth-link">
+              ← Retour à l'accueil
+            </Link>
+          </p>
         </div>
       </div>
     </div>

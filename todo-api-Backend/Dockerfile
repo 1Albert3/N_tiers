@@ -1,16 +1,11 @@
 FROM php:8.2-cli-alpine
 
-# Installation des dépendances système
-RUN apk add --no-cache \
-    git \
+# Installation des dépendances système essentielles
+RUN apk update && apk add --no-cache \
     curl \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    zip \
-    unzip \
+    bash \
     postgresql-dev \
-    && docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath
+    && docker-php-ext-install pdo pdo_pgsql
 
 # Installation de Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

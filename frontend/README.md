@@ -1,46 +1,165 @@
-# Getting Started with Create React App
+# 🚀 TodoPro Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Interface utilisateur moderne et responsive pour l'application TodoPro
 
-## Available Scripts
+## ✨ Fonctionnalités
 
-In the project directory, you can run:
+- **🎨 Design Moderne** : Interface élégante avec animations fluides
+- **📱 Responsive** : Optimisé pour desktop, tablette et mobile
+- **🔐 Authentification** : Système de connexion/inscription sécurisé
+- **📊 Dashboard** : Tableau de bord avec statistiques en temps réel
+- **✅ Gestion des Tâches** : CRUD complet avec filtres et priorités
+- **🎭 Animations** : Transitions et effets visuels professionnels
 
-### `npm start`
+## 🛠️ Technologies
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React 18** avec TypeScript
+- **React Router** pour la navigation
+- **CSS Variables** pour le theming
+- **Fetch API** pour les requêtes HTTP
+- **Context API** pour la gestion d'état
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 🚀 Installation
 
-### `npm test`
+```bash
+# Installation des dépendances
+npm install
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Démarrage en mode développement
+npm start
 
-### `npm run build`
+# Build pour la production
+npm run build
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🎯 Structure du Projet
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+├── components/          # Composants réutilisables
+│   ├── Login.tsx       # Formulaire de connexion
+│   ├── Register.tsx    # Formulaire d'inscription
+│   ├── Sidebar.tsx     # Navigation latérale
+│   ├── TaskForm.tsx    # Formulaire de tâche
+│   └── TaskList.tsx    # Liste des tâches
+├── contexts/           # Contextes React
+│   └── AuthContext.tsx # Gestion de l'authentification
+├── pages/              # Pages principales
+│   ├── Dashboard.tsx   # Tableau de bord
+│   └── LandingPage.tsx # Page d'accueil
+├── api.ts             # Client API
+├── App.tsx            # Composant principal
+└── App.css            # Styles globaux
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🎨 Design System
 
-### `npm run eject`
+### Couleurs
+- **Primary**: `#6366f1` (Indigo)
+- **Success**: `#10b981` (Emerald)
+- **Warning**: `#f59e0b` (Amber)
+- **Error**: `#ef4444` (Red)
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Animations
+- **Fade In**: Apparition en fondu
+- **Slide In**: Glissement depuis la gauche
+- **Hover Lift**: Élévation au survol
+- **Float**: Animation flottante
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 📱 Responsive Breakpoints
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- **Mobile**: < 768px
+- **Tablet**: 768px - 1024px
+- **Desktop**: > 1024px
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## 🔧 Configuration
 
-## Learn More
+### Variables d'environnement
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```env
+REACT_APP_API_URL=http://localhost:8000/api
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Personnalisation des couleurs
+
+Modifiez les variables CSS dans `App.css` :
+
+```css
+:root {
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --success: #10b981;
+  /* ... */
+}
+```
+
+## 🚀 Déploiement
+
+### Docker
+
+```bash
+# Build de l'image
+docker build -t todopro-frontend .
+
+# Lancement du conteneur
+docker run -p 3000:80 todopro-frontend
+```
+
+### Nginx
+
+Configuration recommandée pour Nginx :
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    
+    location / {
+        root /usr/share/nginx/html;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api {
+        proxy_pass http://backend:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+## 🧪 Tests
+
+```bash
+# Lancement des tests
+npm test
+
+# Tests avec couverture
+npm run test:coverage
+```
+
+## 📈 Performance
+
+- **Lazy Loading** : Chargement différé des composants
+- **Code Splitting** : Division du code en chunks
+- **Optimisation des images** : Compression automatique
+- **Service Worker** : Cache intelligent
+
+## 🔒 Sécurité
+
+- **JWT Tokens** : Stockage sécurisé des tokens
+- **HTTPS** : Chiffrement des communications
+- **CSP Headers** : Protection contre XSS
+- **Input Validation** : Validation côté client
+
+## 🤝 Contribution
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
+3. Commit les changements (`git commit -m 'Add AmazingFeature'`)
+4. Push vers la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrir une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.

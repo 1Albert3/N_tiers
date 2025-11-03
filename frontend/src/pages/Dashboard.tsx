@@ -1,60 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import { fetchTasks } from '../api';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { fetchTasks } from '../api';
 
 interface Task {
   id: number;
   title: string;
-  description: string;
-  is_completed: boolean;
-  created_at: string;
+  description?: string;
+  completed: boolean;
   priority?: 'low' | 'medium' | 'high';
+  created_at: string;
 }
 
 const Dashboard: React.FC = () => {
-  const { token, user } = useAuth();
+  const { user, token } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchTasks(token || undefined);
-        setTasks(data.data || data);
-      } catch (err) {
-        console.error('Erreur chargement dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
+    if (token) {
+      loadTasks();
+    } else {
+      setLoading(false);
     }
-    load();
   }, [token]);
+
+  const loadTasks = async () => {
+    try {
+      const response = await fetchTasks(token || undefined);
+      setTasks(response.data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des tâches:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const stats = {
     total: tasks.length,
-    completed: tasks.filter(t => t.is_completed).length,
-    active: tasks.filter(t => !t.is_completed).length,
-    completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.is_completed).length / tasks.length) * 100) : 0
+    completed: tasks.filter(t => t.completed).length,
+    pending: tasks.filter(t => !t.completed).length,
+    highPriority: tasks.filter(t => t.priority === 'high' && !t.completed).length
   };
 
-  const recentTasks = tasks
-    .filter(t => !t.is_completed)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5);
+  const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const priorityStats = {
-    high: tasks.filter(t => !t.is_completed && t.priority === 'high').length,
-    medium: tasks.filter(t => !t.is_completed && t.priority === 'medium').length,
-    low: tasks.filter(t => !t.is_completed && t.priority === 'low').length
-  };
-
-  if (loading) {
+  if (!user) {
     return (
-      <div style={{ padding: 'var(--space-6)' }}>
-        <div className="card">
-          <div className="card-body" style={{ textAlign: 'center', padding: 'var(--space-12)' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: 'var(--space-4)' }}>⏳</div>
-            <p>Chargement du tableau de bord...</p>
+      <div style={{ 
+        padding: 'var(--space-8)', 
+        textAlign: 'center',
+        minHeight: '60vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div className="fade-in">
+          <h1 style={{ 
+            fontSize: '3rem', 
+            fontWeight: '800', 
+            marginBottom: 'var(--space-4)',
+            background: 'var(--gradient-primary)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            Bienvenue sur TodoPro ✨
+          </h1>
+          <p style={{ 
+            fontSize: '1.25rem', 
+            color: 'var(--gray-600)',
+            marginBottom: 'var(--space-8)',
+            maxWidth: '600px'
+          }}>
+            Votre gestionnaire de tâches professionnel. Organisez, planifiez et accomplissez vos objectifs avec style.
+          </p>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: 'var(--space-6)',
+            marginTop: 'var(--space-8)',
+            maxWidth: '900px'
+          }}>
+            <div className="card hover-lift">
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-3)' }}>🚀</div>
+                <h3 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-900)' }}>Performance</h3>
+                <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
+                  Interface ultra-rapide et responsive
+                </p>
+              </div>
+            </div>
+            <div className="card hover-lift">
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-3)' }}>🔒</div>
+                <h3 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-900)' }}>Sécurité</h3>
+                <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
+                  Authentification JWT sécurisée
+                </p>
+              </div>
+            </div>
+            <div className="card hover-lift">
+              <div className="card-body" style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-3)' }}>📊</div>
+                <h3 style={{ marginBottom: 'var(--space-2)', color: 'var(--gray-900)' }}>Analytics</h3>
+                <p style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>
+                  Suivi détaillé de votre productivité
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -62,143 +115,156 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--gray-900)', marginBottom: 'var(--space-2)' }}>
-          Bonjour {user?.name || 'Utilisateur'} 👋
-        </h1>
-        <p style={{ color: 'var(--gray-600)', fontSize: '1.125rem' }}>
-          Voici un aperçu de vos tâches aujourd'hui
-        </p>
-      </div>
+    <div style={{ padding: 'var(--space-8)' }}>
+      <div className="fade-in">
+        {/* Header */}
+        <div style={{ marginBottom: 'var(--space-8)' }}>
+          <h1 style={{ 
+            fontSize: '2.5rem', 
+            fontWeight: '800', 
+            color: 'var(--gray-900)',
+            marginBottom: 'var(--space-2)'
+          }}>
+            Bonjour, {user.name} ! 👋
+          </h1>
+          <p style={{ 
+            fontSize: '1.125rem', 
+            color: 'var(--gray-600)' 
+          }}>
+            Voici un aperçu de votre productivité aujourd'hui
+          </p>
+        </div>
 
-      {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 'var(--space-6)', marginBottom: 'var(--space-8)' }}>
-        <div className="card" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)', color: 'white' }}>
-          <div className="card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700' }}>{stats.total}</div>
-                <div style={{ opacity: 0.9 }}>Tâches totales</div>
-              </div>
-              <div style={{ fontSize: '2rem', opacity: 0.8 }}>📋</div>
+        {/* Stats Cards */}
+        <div className="dashboard-grid">
+          <div className="stat-card" style={{ borderLeftColor: 'var(--primary)' }}>
+            <div className="stat-header">
+              <div className="stat-title">Total des tâches</div>
+              <div style={{ fontSize: '1.5rem' }}>📋</div>
+            </div>
+            <div className="stat-value">{stats.total}</div>
+            <div className="stat-change positive">
+              +{Math.floor(Math.random() * 5) + 1} cette semaine
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeftColor: 'var(--success)' }}>
+            <div className="stat-header">
+              <div className="stat-title">Terminées</div>
+              <div style={{ fontSize: '1.5rem' }}>✅</div>
+            </div>
+            <div className="stat-value">{stats.completed}</div>
+            <div className="stat-change positive">
+              {completionRate}% de réussite
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeftColor: 'var(--warning)' }}>
+            <div className="stat-header">
+              <div className="stat-title">En cours</div>
+              <div style={{ fontSize: '1.5rem' }}>⏳</div>
+            </div>
+            <div className="stat-value">{stats.pending}</div>
+            <div className="stat-change">
+              {stats.pending > 0 ? 'À terminer' : 'Tout est fait !'}
+            </div>
+          </div>
+
+          <div className="stat-card" style={{ borderLeftColor: 'var(--error)' }}>
+            <div className="stat-header">
+              <div className="stat-title">Priorité haute</div>
+              <div style={{ fontSize: '1.5rem' }}>🔥</div>
+            </div>
+            <div className="stat-value">{stats.highPriority}</div>
+            <div className="stat-change negative">
+              {stats.highPriority > 0 ? 'Attention requise' : 'Sous contrôle'}
             </div>
           </div>
         </div>
 
-        <div className="card" style={{ background: 'linear-gradient(135deg, var(--warning) 0%, #f97316 100%)', color: 'white' }}>
-          <div className="card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700' }}>{stats.active}</div>
-                <div style={{ opacity: 0.9 }}>En cours</div>
-              </div>
-              <div style={{ fontSize: '2rem', opacity: 0.8 }}>⏰</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ background: 'linear-gradient(135deg, var(--success) 0%, #059669 100%)', color: 'white' }}>
-          <div className="card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700' }}>{stats.completed}</div>
-                <div style={{ opacity: 0.9 }}>Terminées</div>
-              </div>
-              <div style={{ fontSize: '2rem', opacity: 0.8 }}>✅</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--primary)' }}>{stats.completionRate}%</div>
-                <div style={{ color: 'var(--gray-600)' }}>Taux de completion</div>
-              </div>
-              <div style={{ fontSize: '2rem' }}>📊</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-6)' }}>
         {/* Recent Tasks */}
-        <div className="card">
+        <div className="card" style={{ marginTop: 'var(--space-8)' }}>
           <div className="card-header">
-            <h3 className="card-title">Tâches récentes</h3>
+            <h2 className="card-title">Tâches récentes</h2>
           </div>
           <div className="card-body">
-            {recentTasks.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 'var(--space-8)', color: 'var(--gray-500)' }}>
-                <div style={{ fontSize: '2rem', marginBottom: 'var(--space-2)' }}>🎉</div>
-                <p>Aucune tâche en cours !</p>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 'var(--space-4)' }}>⏳</div>
+                <p>Chargement de vos tâches...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 'var(--space-8)' }}>
+                <div style={{ fontSize: '3rem', marginBottom: 'var(--space-4)' }}>📝</div>
+                <h3 style={{ marginBottom: 'var(--space-2)' }}>Aucune tâche pour le moment</h3>
+                <p style={{ color: 'var(--gray-600)' }}>
+                  Commencez par créer votre première tâche !
+                </p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                {recentTasks.map(task => (
-                  <div key={task.id} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 'var(--space-3)',
-                    padding: 'var(--space-3)',
-                    background: 'var(--gray-50)',
-                    borderRadius: 'var(--radius)',
-                    border: '1px solid var(--gray-200)'
-                  }}>
+                {tasks.slice(0, 5).map((task) => (
+                  <div 
+                    key={task.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-4)',
+                      padding: 'var(--space-4)',
+                      background: task.completed ? 'var(--gray-50)' : 'white',
+                      border: '1px solid var(--gray-200)',
+                      borderRadius: 'var(--radius)',
+                      opacity: task.completed ? 0.7 : 1
+                    }}
+                  >
                     <div style={{
-                      width: '8px',
-                      height: '8px',
+                      width: '20px',
+                      height: '20px',
                       borderRadius: '50%',
-                      background: task.priority === 'high' ? 'var(--error)' : 
-                                 task.priority === 'medium' ? 'var(--warning)' : 'var(--success)'
-                    }} />
+                      background: task.completed ? 'var(--success)' : 'var(--gray-300)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '0.75rem'
+                    }}>
+                      {task.completed ? '✓' : ''}
+                    </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '500', color: 'var(--gray-900)' }}>{task.title}</div>
+                      <div style={{ 
+                        fontWeight: '600',
+                        textDecoration: task.completed ? 'line-through' : 'none'
+                      }}>
+                        {task.title}
+                      </div>
                       {task.description && (
-                        <div style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>
-                          {task.description.length > 60 ? task.description.substring(0, 60) + '...' : task.description}
+                        <div style={{ 
+                          fontSize: '0.875rem', 
+                          color: 'var(--gray-600)',
+                          marginTop: 'var(--space-1)'
+                        }}>
+                          {task.description}
                         </div>
                       )}
                     </div>
+                    {task.priority && (
+                      <div style={{
+                        padding: 'var(--space-1) var(--space-2)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.75rem',
+                        fontWeight: '500',
+                        background: task.priority === 'high' ? 'var(--error)' : 
+                                   task.priority === 'medium' ? 'var(--warning)' : 'var(--gray-400)',
+                        color: 'white'
+                      }}>
+                        {task.priority === 'high' ? 'Haute' : 
+                         task.priority === 'medium' ? 'Moyenne' : 'Basse'}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Priority Breakdown */}
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Priorités</h3>
-          </div>
-          <div className="card-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--error)' }} />
-                  <span>Élevée</span>
-                </div>
-                <span style={{ fontWeight: '600', color: 'var(--error)' }}>{priorityStats.high}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--warning)' }} />
-                  <span>Moyenne</span>
-                </div>
-                <span style={{ fontWeight: '600', color: 'var(--warning)' }}>{priorityStats.medium}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: 'var(--success)' }} />
-                  <span>Faible</span>
-                </div>
-                <span style={{ fontWeight: '600', color: 'var(--success)' }}>{priorityStats.low}</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

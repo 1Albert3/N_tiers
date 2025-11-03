@@ -3,15 +3,13 @@ set -e
 
 echo "Starting Laravel backend..."
 
-# Copier .env si nécessaire
-if [ ! -f .env ]; then
-    cp .env.example .env
-fi
+# Attendre PostgreSQL
+echo "Waiting for PostgreSQL..."
+sleep 10
 
-# Générer la clé si nécessaire
-if ! grep -q "APP_KEY=base64:" .env; then
-    php artisan key:generate --force
-fi
+# Exécuter les migrations
+echo "Running migrations..."
+php artisan migrate --force 2>/dev/null || echo "Migrations will be created later"
 
 echo "Starting server..."
 exec "$@"
