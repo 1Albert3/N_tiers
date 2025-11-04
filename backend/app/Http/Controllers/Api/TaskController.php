@@ -40,6 +40,7 @@ class TaskController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = auth()->id();
+        $data['is_completed'] = $data['is_completed'] ?? false;
 
         $task = $this->taskRepository->create($data);
 
