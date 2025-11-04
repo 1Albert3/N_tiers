@@ -37,17 +37,8 @@ class TaskApiTest extends TestCase
         $response->assertStatus(201)
                 ->assertJsonStructure([
                     'message',
-                    'data'
+                    'data' => ['id', 'title', 'description', 'priority', 'is_completed']
                 ]);
-        
-        // Debug: voir la structure réelle
-        $responseData = $response->json('data');
-        dump('Response data:', $responseData); // Debug output
-        
-        $this->assertArrayHasKey('id', $responseData);
-        $this->assertArrayHasKey('title', $responseData);
-        // Temporairement commenté pour voir la structure
-        // $this->assertArrayHasKey('is_completed', $responseData);
 
         $this->assertDatabaseHas('tasks', [
             'title' => 'Test Task',
