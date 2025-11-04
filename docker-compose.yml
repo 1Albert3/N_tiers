@@ -22,7 +22,7 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
-      - APP_KEY=base64:YWJjZGVmZ2hpams1bG1ub3BxcnN0dXZ3eHl6MTIzNDU2Nzg5MA==
+      - APP_KEY=base64:+LKadkDolG0CvW6mrQkiIi+m/TwHjjRYenz/BTRcJg0=
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -30,6 +30,9 @@ services:
       - DB_USERNAME=todo_user
       - DB_PASSWORD=todo_password
       - JWT_SECRET=your-jwt-secret-key-change-this-in-production
+      - SESSION_DRIVER=array
+      - SANCTUM_STATEFUL_DOMAINS=localhost:3000
+      - APP_URL=http://localhost:8000
     depends_on:
       - postgres
     networks:
