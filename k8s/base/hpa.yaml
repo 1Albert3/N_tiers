@@ -3,6 +3,8 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: frontend-hpa
   namespace: todopro
+  labels:
+    app: frontend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -23,12 +25,31 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Max
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: backend-hpa
   namespace: todopro
+  labels:
+    app: backend
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
@@ -49,3 +70,20 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 4
+        periodSeconds: 60
+      selectPolicy: Max

@@ -13,6 +13,15 @@ resources:
   - backend-service.yaml
   - db-statefulset.yaml
   - db-service.yaml
+  - hpa.yaml
+  - networkpolicy.yaml
+  - ingress.yaml
+  - monitoring.yaml
 
 commonLabels:
   app: todopro
+  version: v1
+
+commonAnnotations:
+  app.kubernetes.io/managed-by: kustomize
+  app.kubernetes.io/part-of: todopro

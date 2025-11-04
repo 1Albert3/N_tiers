@@ -321,7 +321,26 @@ docker-compose logs -f
 | **API Docs** | http://localhost:8000/api | Documentation API           |
 | **Database** | localhost:5432            | PostgreSQL (accès interne)  |
 
-### 🛠️ Commandes utiles
+### 🛠️ Scripts et Commandes utiles
+
+#### **Scripts Windows automatisés**
+
+```bash
+# Construction des images Docker
+build-images.bat                    # Construction standard
+build-images.bat v1.0.0            # Avec tag personnalisé
+build-images.bat latest username    # Pour registry Docker Hub
+
+# Déploiement Kubernetes
+deploy-k8s.bat                      # Environnement de base
+deploy-k8s.bat staging              # Environnement de staging
+deploy-k8s.bat production           # Environnement de production
+
+# Tests d'intégration
+test-app.bat                        # Tests complets de l'application
+```
+
+#### **Commandes Docker Compose**
 
 ```bash
 # Arrêter les services
@@ -359,16 +378,35 @@ kubectl cluster-info
 
 ```bash
 # Utiliser le script automatisé (Windows)
+# Construction simple
 build-images.bat
+
+# Construction avec tag personnalisé
+build-images.bat v1.2.0
+
+# Construction pour registry Docker Hub
+build-images.bat latest your-dockerhub-username
 
 # Ou manuellement :
 docker build -t todopro-frontend:latest ./frontend/
 docker build -t todopro-backend:latest ./backend/
+docker build -t todopro-database:latest ./database-tier/
 ```
 
 ### 🚀 Déploiement sur Kubernetes
 
 ```bash
+# Utiliser le script automatisé (Windows)
+# Déploiement en environnement de base
+deploy-k8s.bat
+
+# Déploiement en staging
+deploy-k8s.bat staging
+
+# Déploiement en production
+deploy-k8s.bat production
+
+# Ou manuellement :
 # Déployer tous les composants
 kubectl apply -k k8s/base/
 

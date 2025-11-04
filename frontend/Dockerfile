@@ -1,35 +1,23 @@
 # Build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
-<<<<<<< HEAD
 
-# Copie du package.json pour le cache
+# Copy package files for better caching
 COPY package*.json ./
+RUN npm ci --only=production
 
-# Installation des dépendances
-RUN npm install
-
-# Copie du reste des fichiers
-=======
-COPY package*.json ./
-RUN npm install
->>>>>>> 3d64dd81153d0a0908091baf656f15adf99d1c1b
+# Copy source code and build
 COPY . .
 RUN npm run build
 
-<<<<<<< HEAD
-# Build de l'application
-RUN npm run build
-
-# Installation du serveur statique
-RUN npm install -g serve
-
-# Exposer le port
-=======
 # Production stage
 FROM nginx:alpine
 COPY --from=builder /app/build /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
->>>>>>> 3d64dd81153d0a0908091baf656f15adf99d1c1b
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+RUN chown -R nextjs:nodejs /usr/share/nginx/html
+
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
