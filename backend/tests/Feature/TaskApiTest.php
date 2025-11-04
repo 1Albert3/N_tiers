@@ -26,7 +26,8 @@ class TaskApiTest extends TestCase
         $taskData = [
             'title' => 'Test Task',
             'description' => 'Test Description',
-            'priority' => 'high'
+            'priority' => 'high',
+            'is_completed' => false
         ];
 
         $response = $this->withHeaders([
