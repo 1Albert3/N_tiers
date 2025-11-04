@@ -36,7 +36,7 @@ class TaskApiTest extends TestCase
         $response->assertStatus(201)
                 ->assertJsonStructure([
                     'message',
-                    'data' => ['id', 'title', 'description', 'is_completed']
+                    'data' => ['id', 'title', 'description', 'priority', 'is_completed']
                 ]);
 
         $this->assertDatabaseHas('tasks', [
