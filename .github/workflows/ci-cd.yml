@@ -43,11 +43,11 @@ jobs:
 
       - name: Install Backend Dependencies
         working-directory: ./backend
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        run: composer update --no-progress --prefer-dist --optimize-autoloader
 
       - name: Install Frontend Dependencies
         working-directory: ./frontend
-        run: npm ci
+        run: npm install
 
       - name: Run Backend Tests
         working-directory: ./backend
