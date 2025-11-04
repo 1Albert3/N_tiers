@@ -18,6 +18,7 @@ class TaskRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'priority' => 'nullable|in:low,medium,high',
             'due_date' => 'nullable|date',
+            'is_completed' => 'nullable|boolean',
         ];
     }
 

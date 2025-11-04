@@ -37,11 +37,8 @@ class TaskApiTest extends TestCase
         $response->assertStatus(201)
                 ->assertJsonStructure([
                     'message',
-                    'data' => ['id', 'title', 'description', 'priority']
+                    'data' => ['id', 'title', 'description', 'priority', 'is_completed']
                 ]);
-                
-        // Vérifier que is_completed existe dans la réponse
-        $this->assertTrue($response->json('data.is_completed') !== null || $response->json('data.is_completed') === false);
 
         $this->assertDatabaseHas('tasks', [
             'title' => 'Test Task',
