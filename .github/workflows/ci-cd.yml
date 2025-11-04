@@ -80,13 +80,13 @@ jobs:
         with:
           scan-type: "fs"
           scan-ref: "."
-          format: "sarif"
-          output: "trivy-results.sarif"
+          format: "table"
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && github.actor != 'dependabot[bot]'
         with:
           sarif_file: "trivy-results.sarif"
+        continue-on-error: true
 
   build-and-push:
     needs: [test, security-scan]
