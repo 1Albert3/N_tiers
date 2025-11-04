@@ -6,7 +6,6 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class TaskApiTest extends TestCase
 {
@@ -19,7 +18,7 @@ class TaskApiTest extends TestCase
     {
         parent::setUp();
         $this->user = User::factory()->create();
-        $this->token = JWTAuth::fromUser($this->user);
+        $this->token = $this->user->createToken('test')->plainTextToken;
     }
 
     public function test_user_can_create_task()
