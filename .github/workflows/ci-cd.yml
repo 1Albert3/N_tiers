@@ -91,7 +91,7 @@ jobs:
   build-and-push:
     needs: [test, security-scan]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/fix/register'
     outputs:
       frontend-tag: ${{ steps.meta-frontend.outputs.tags }}
       backend-tag: ${{ steps.meta-backend.outputs.tags }}
