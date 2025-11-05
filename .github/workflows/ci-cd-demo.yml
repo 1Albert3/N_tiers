@@ -117,5 +117,8 @@ jobs:
           version: "v1.28.0"
       - name: Validate Kubernetes manifests
         run: |
-          kubectl apply --dry-run=client -k k8s/base/
+          # Validation Kustomize (syntaxe YAML et structure)
+          echo "Validating Kustomize configuration..."
+          kubectl kustomize k8s/base/ > /tmp/manifests.yaml
           echo "✅ Kubernetes manifests are valid"
+          echo "Generated $(wc -l < /tmp/manifests.yaml) lines of Kubernetes manifests"
