@@ -137,53 +137,67 @@ jobs:
           docker build -t todopro-database:test ./database-tier
       - name: Start Application
         run: |
-          # Créer un docker-compose temporaire pour les tests
-          cat > docker-compose.test.yml << EOF
-          version: '3.8'
+          # Créer un docker-compose pour les tests avec les images pré-construites
+          cat > docker-compose.test.yml << 'EOF'
           services:
-            postgres:
-              image: todopro-database:test
+            frontend:
+              image: todopro-frontend:test
+              ports:
+                - "3000:3000"
               environment:
-                POSTGRES_DB: todo_db
-                POSTGRES_USER: todo_user
-                POSTGRES_PASSWORD: todo_password
+                - REACT_APP_API_URL=http://localhost:8000/api
+              depends_on:
+                - backend
+              networks:
+                - todo-network
+          
+            backend:
+              image: todopro-backend:test
+              ports:
+                - "8000:8000"
+              environment:
+                - APP_ENV=local
+                - APP_DEBUG=true
+                - APP_KEY=base64:YWJjZGVmZ2hpams1bG1ub3BxcnN0dXZ3eHl6MTIzNDU2Nzg5MA==
+                - DB_CONNECTION=pgsql
+                - DB_HOST=postgres
+                - DB_PORT=5432
+                - DB_DATABASE=todo_db
+                - DB_USERNAME=todo_user
+                - DB_PASSWORD=todo_password
+                - JWT_SECRET=your-jwt-secret-key-change-this-in-production
+              depends_on:
+                postgres:
+                  condition: service_healthy
+              networks:
+                - todo-network
+          
+            postgres:
+              image: postgres:15-alpine
               ports:
                 - "5432:5432"
+              environment:
+                - POSTGRES_DB=todo_db
+                - POSTGRES_USER=todo_user
+                - POSTGRES_PASSWORD=todo_password
               healthcheck:
                 test: ["CMD-SHELL", "pg_isready -U todo_user -d todo_db"]
                 interval: 10s
                 timeout: 5s
                 retries: 5
-            
-            backend:
-              image: todopro-backend:test
-              environment:
-                DB_CONNECTION: pgsql
-                DB_HOST: postgres
-                DB_PORT: 5432
-                DB_DATABASE: todo_db
-                DB_USERNAME: todo_user
-                DB_PASSWORD: todo_password
-                APP_KEY: base64:$(openssl rand -base64 32)
-              ports:
-                - "8000:8000"
-              depends_on:
-                postgres:
-                  condition: service_healthy
-            
-            frontend:
-              image: todopro-frontend:test
-              ports:
-                - "3000:3000"
-              depends_on:
-                - backend
+              networks:
+                - todo-network
+          
+          networks:
+            todo-network:
+              driver: bridge
           EOF
           
           # Démarrer l'application
           docker compose -f docker-compose.test.yml up -d
           
           # Attendre que les services soient prêts
-          sleep 60
+          sleep 90
       - name: Test Application
         run: |
           # Test Backend Health
