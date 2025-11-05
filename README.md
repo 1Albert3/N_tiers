@@ -406,15 +406,28 @@ kubectl delete -k k8s/base/
 
 Le pipeline CI/CD est automatiquement configuré dans `.github/workflows/ci-cd.yml`.
 
-#### 📋 Secrets à configurer dans GitHub
+#### 📋 Pipeline CI/CD (Optionnel)
 
-Allez dans **Settings > Secrets and variables > Actions** et ajoutez :
+Si vous voulez tester le pipeline :
 
+1. **Fork le repository**
+2. **Ajouter ces secrets dans Settings > Secrets** :
+   ```
+   DOCKER_USERNAME=votre-dockerhub-username
+   DOCKER_PASSWORD=votre-dockerhub-token
+   KUBE_CONFIG_STAGING=base64-kubeconfig
+   KUBE_CONFIG_PROD=base64-kubeconfig
+   ```
+3. **Créer les environnements** `staging` et `production`
+4. **Push sur main** pour déclencher le pipeline
+
+### Génération Kubeconfig (si besoin)
 ```bash
-DOCKER_USERNAME=votre-username-dockerhub
-DOCKER_PASSWORD=votre-token-dockerhub
-KUBE_CONFIG_STAGING=base64-encoded-kubeconfig
-KUBE_CONFIG_PROD=base64-encoded-kubeconfig
+# Windows
+generate-kubeconfig.bat
+
+# Linux/Mac
+base64 -w 0 ~/.kube/config
 ```
 
 #### 🔄 Workflow automatique
@@ -516,174 +529,6 @@ Ce projet a été développé dans le cadre d'une mission DevOps pour automatise
 ### 📈 Métriques et Performance
 
 #### **Avant DevOps**
-
-- **Déploiement** : Manuel, 2-3 heures
-- **Tests** : Manuels, non systématiques
-- **Rollback** : Difficile, 1-2 heures
-- **Environnements** : Développement uniquement
-
-#### **Après DevOps**
-
-- **Déploiement** : Automatique, 10-15 minutes
-- **Tests** : Automatisés, 5 minutes
-- **Rollback** : Automatique, 2 minutes
-- **Environnements** : Dev, Staging, Production
-
-#### **Gains Mesurés**
-
-- ⚡ **Temps de déploiement** : -85%
-- 🔒 **Sécurité** : +100% (scan automatique)
-- 🚀 **Fiabilité** : +90% (tests automatisés)
-- 📊 **Traçabilité** : +100% (logs centralisés)
-
-### 🎓 Apprentissages et Bonnes Pratiques
-
-#### **Techniques**
-
-1. **Infrastructure as Code** : Tout doit être versionné
-2. **Immutabilité** : Images Docker non modifiables
-3. **Observabilité** : Logs, métriques, traces essentiels
-4. **Sécurité** : Scan continu, secrets chiffrés
-
-#### **Organisationnelles**
-
-1. **Documentation** : README détaillé indispensable
-2. **Tests** : Couverture minimale 80%
-3. **Rollback** : Plan de retour arrière systématique
-4. **Monitoring** : Alertes proactives
-
-### 🔮 Évolutions Futures
-
-#### **Court terme (1-3 mois)**
-
-- [ ] Monitoring avec Prometheus/Grafana
-- [ ] Centralisation des logs (ELK Stack)
-- [ ] Backup automatique de la base de données
-- [ ] Tests de charge automatisés
-
-#### **Moyen terme (3-6 mois)**
-
-- [ ] Service Mesh avec Istio
-- [ ] GitOps avec ArgoCD
-- [ ] Multi-cloud deployment
-- [ ] Disaster Recovery Plan
-
-#### **Long terme (6-12 mois)**
-
-- [ ] Machine Learning pour l'optimisation
-- [ ] Chaos Engineering
-- [ ] Zero-downtime deployments
-- [ ] Compliance et audit automatisés
-
-### 💡 Recommandations
-
-#### **Pour l'équipe de développement**
-
-1. **Formation** : Investir dans la formation DevOps
-2. **Outils** : Standardiser sur Docker/Kubernetes
-3. **Culture** : Adopter la philosophie "You build it, you run it"
-
-#### **Pour l'organisation**
-
-1. **Investissement** : Budget pour l'infrastructure cloud
-2. **Processus** : Intégrer DevOps dans le cycle de développement
-3. **Sécurité** : Former les équipes aux bonnes pratiques
-
----
-
-## 🛠️ Dépannage
-
-### ❌ Problèmes courants
-
-#### **Docker ne démarre pas**
-
-```bash
-# Vérifier que Docker Desktop est démarré
-docker --version
-
-# Redémarrer Docker Desktop si nécessaire
-# Vérifier les ressources système (RAM > 4GB recommandé)
-```
-
-#### **Erreur "Port already in use"**
-
-```bash
-# Trouver le processus utilisant le port
-netstat -ano | findstr :3000
-netstat -ano | findstr :8000
-
-# Arrêter le processus ou changer le port dans docker-compose.yml
-```
-
-#### **Base de données non accessible**
-
-```bash
-# Vérifier que PostgreSQL est démarré
-docker-compose ps postgres
-
-# Recréer le volume si nécessaire
-docker-compose down -v
-docker-compose up -d
-```
-
-#### **Images Docker non trouvées**
-
-```bash
-# Construire les images localement
-docker-compose build
-
-# Ou utiliser le script
-build-images.bat
-```
-
-### 🔍 Logs et Debugging
-
-```bash
-# Logs détaillés
-docker-compose logs -f --tail=100
-
-# Logs d'un service spécifique
-docker-compose logs backend
-
-# Accéder au conteneur pour debug
-docker-compose exec backend bash
-docker-compose exec frontend sh
-```
-
-### 📞 Support
-
-- **Issues GitHub** : [Créer une issue](https://github.com/votre-repo/issues)
-- **Documentation** : Consultez ce README
-- **Logs** : Toujours inclure les logs dans vos rapports de bug
-
----
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
----
-
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
-3. Commit les changements (`git commit -am 'Ajout nouvelle fonctionnalité'`)
-4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
-5. Créer une Pull Request
-
----
-
-## 👥 Équipe
-
-- **DevOps Engineer** : Votre nom
-- **Frontend Developer** : Équipe React
-- **Backend Developer** : Équipe Laravel
-- **Database Administrator** : Équipe PostgreSQL
-
----
-
-**🎉 Félicitations ! Vous avez maintenant une application TodoPro complètement fonctionnelle avec une infrastructure DevOps moderne !\***
 
 - **Déploiement** : Manuel, 2-3 heures
 - **Tests** : Manuels, non systématiques
