@@ -1,0 +1,121 @@
+name: CI/CD Demo (Sans Secrets)
+
+on:
+  push:
+    branches: [main, develop, fix/register]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: todo_password
+          POSTGRES_USER: todo_user
+          POSTGRES_DB: todo_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: composer update --no-progress --prefer-dist --optimize-autoloader
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm install
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate
+          php artisan test
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: todo_db
+          DB_USERNAME: todo_user
+          DB_PASSWORD: todo_password
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: npm test -- --coverage --watchAll=false
+
+  security-scan:
+    needs: test
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+
+  build-images:
+    needs: [test, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build Frontend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: false
+          tags: todopro-frontend:demo
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build Backend Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: false
+          tags: todopro-backend:demo
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build Database Image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./database-tier
+          push: false
+          tags: todopro-database:demo
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  validate-k8s:
+    needs: build-images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "v1.28.0"
+      - name: Validate Kubernetes manifests
+        run: |
+          kubectl apply --dry-run=client -k k8s/base/
+          echo "✅ Kubernetes manifests are valid"
