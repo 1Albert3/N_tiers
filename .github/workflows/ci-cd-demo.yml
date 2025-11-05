@@ -122,3 +122,98 @@ jobs:
           kubectl kustomize k8s/base/ > /tmp/manifests.yaml
           echo "✅ Kubernetes manifests are valid"
           echo "Generated $(wc -l < /tmp/manifests.yaml) lines of Kubernetes manifests"
+
+  deploy-test:
+    needs: validate-k8s
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and Load Images
+        run: |
+          docker build -t todopro-frontend:test ./frontend
+          docker build -t todopro-backend:test ./backend
+          docker build -t todopro-database:test ./database-tier
+      - name: Start Application
+        run: |
+          # Créer un docker-compose temporaire pour les tests
+          cat > docker-compose.test.yml << EOF
+          version: '3.8'
+          services:
+            postgres:
+              image: todopro-database:test
+              environment:
+                POSTGRES_DB: todo_db
+                POSTGRES_USER: todo_user
+                POSTGRES_PASSWORD: todo_password
+              ports:
+                - "5432:5432"
+              healthcheck:
+                test: ["CMD-SHELL", "pg_isready -U todo_user -d todo_db"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+            
+            backend:
+              image: todopro-backend:test
+              environment:
+                DB_CONNECTION: pgsql
+                DB_HOST: postgres
+                DB_PORT: 5432
+                DB_DATABASE: todo_db
+                DB_USERNAME: todo_user
+                DB_PASSWORD: todo_password
+                APP_KEY: base64:$(openssl rand -base64 32)
+              ports:
+                - "8000:8000"
+              depends_on:
+                postgres:
+                  condition: service_healthy
+            
+            frontend:
+              image: todopro-frontend:test
+              ports:
+                - "3000:3000"
+              depends_on:
+                - backend
+          EOF
+          
+          # Démarrer l'application
+          docker-compose -f docker-compose.test.yml up -d
+          
+          # Attendre que les services soient prêts
+          sleep 60
+      - name: Test Application
+        run: |
+          # Test Backend Health
+          echo "Testing backend health..."
+          curl -f http://localhost:8000/api/health || exit 1
+          echo "✅ Backend is healthy"
+          
+          # Test Frontend
+          echo "Testing frontend..."
+          curl -f http://localhost:3000 || exit 1
+          echo "✅ Frontend is accessible"
+          
+          # Test API Registration (optionnel)
+          echo "Testing API registration..."
+          curl -X POST http://localhost:8000/api/register \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Test User","email":"test@example.com","password":"password123","password_confirmation":"password123"}' \
+            || echo "⚠️ Registration test failed (expected if validation strict)"
+          
+          echo "🎉 Application is running successfully!"
+      - name: Show Logs (if failure)
+        if: failure()
+        run: |
+          echo "=== Backend Logs ==="
+          docker-compose -f docker-compose.test.yml logs backend
+          echo "=== Frontend Logs ==="
+          docker-compose -f docker-compose.test.yml logs frontend
+          echo "=== Database Logs ==="
+          docker-compose -f docker-compose.test.yml logs postgres
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.test.yml down -v || true
