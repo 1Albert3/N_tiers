@@ -1,18 +1,71 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+metadata:
+  name: todopro-base
+
 namespace: todopro
 
 resources:
   - namespace.yaml
   - configmap.yaml
   - secret.yaml
-  - frontend-deployment.yaml
-  - frontend-service.yaml
+  - pvc.yaml
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
   - backend-deployment.yaml
   - backend-service.yaml
-  - db-statefulset.yaml
-  - db-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml
+  - hpa.yaml
+  - networkpolicy.yaml
 
-commonLabels:
-  app: todopro
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: todopro
+      app.kubernetes.io/version: "1.0.0"
+      app.kubernetes.io/component: web-app
+
+images:
+  - name: todopro-frontend
+    newTag: latest
+  - name: todopro-backend
+    newTag: latest
+
+replicas:
+  - name: frontend
+    count: 2
+  - name: backend
+    count: 2
+
+patchesStrategicMerge:
+  - patches/resource-limits.yaml
+
+configMapGenerator:
+  - name: todopro-config
+    literals:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres-service
+      - DB_PORT=5432
+      - DB_DATABASE=todo_db
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - REDIS_HOST=redis-service
+      - REDIS_PORT=6379
+      - REACT_APP_API_URL=/api
+
+secretGenerator:
+  - name: todopro-secrets
+    literals:
+      - APP_KEY=base64:$(echo -n "your-32-character-secret-key-here" | base64)
+      - DB_USERNAME=todo_user
+      - DB_PASSWORD=secure_password_change_me
+      - JWT_SECRET=your-jwt-secret-key-change-this
+      - POSTGRES_PASSWORD=secure_password_change_me

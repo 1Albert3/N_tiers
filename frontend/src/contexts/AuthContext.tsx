@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { login as apiLogin, register as apiRegister } from '../api';
 
-type AuthContextType = {
-  token?: string | null;
-  user?: any;
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+interface AuthContextType {
+  token: string | null;
+  user: User | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
-};
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -18,42 +24,66 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
-  const [user, setUser] = useState<any>(() => {
-    const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+  const [token, setToken] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('token');
+    } catch {
+      return null;
+    }
+  });
+  
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   });
 
-  useEffect(() => {
-    if (token) localStorage.setItem('token', token);
-    else localStorage.removeItem('token');
-  }, [token]);
-
-  useEffect(() => {
-    if (user) localStorage.setItem('user', JSON.stringify(user));
-    else localStorage.removeItem('user');
-  }, [user]);
-
-  async function signIn(email: string, password: string) {
+  const signIn = useCallback(async (email: string, password: string) => {
     const res = await apiLogin({ email, password });
-    // API expected to return token and user
-    setToken(res.access_token || res.token || null);
-    setUser(res.user || null);
-  }
+    const newToken = res.access_token || res.token;
+    const newUser = res.user;
+    
+    setToken(newToken);
+    setUser(newUser);
+    
+    if (newToken) localStorage.setItem('token', newToken);
+    if (newUser) localStorage.setItem('user', JSON.stringify(newUser));
+  }, []);
 
-  async function signUp(name: string, email: string, password: string) {
+  const signUp = useCallback(async (name: string, email: string, password: string) => {
     const res = await apiRegister({ name, email, password, password_confirmation: password });
-    setToken(res.access_token || res.token || null);
-    setUser(res.user || null);
-  }
+    const newToken = res.access_token || res.token;
+    const newUser = res.user;
+    
+    setToken(newToken);
+    setUser(newUser);
+    
+    if (newToken) localStorage.setItem('token', newToken);
+    if (newUser) localStorage.setItem('user', JSON.stringify(newUser));
+  }, []);
 
-  function signOut() {
+  const signOut = useCallback(() => {
     setToken(null);
     setUser(null);
-  }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }, []);
+
+  const value = {
+    token,
+    user,
+    signIn,
+    signUp,
+    signOut
+  };
 
   return (
-    <AuthContext.Provider value={{ token, user, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 

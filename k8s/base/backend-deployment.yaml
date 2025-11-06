@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: todo-api-main-backend:latest
+        image: todopro-backend:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
@@ -77,3 +77,17 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
