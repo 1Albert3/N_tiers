@@ -1,0 +1,11 @@
+parameters:
+    level: 5
+    paths:
+        - app
+        - tests
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    ignoreErrors:
+        - '#Access to an undefined property App\\Http\\Requests\\[a-zA-Z]+::\$[a-zA-Z]+#'
+        - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::id\(\)#'
+        - '#Call to an undefined static method App\\Models\\User::[a-zA-Z]+\(\)#'

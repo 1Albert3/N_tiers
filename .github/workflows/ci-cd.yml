@@ -55,7 +55,7 @@ jobs:
         run: |
           cd backend
           composer require --dev phpstan/phpstan
-          ./vendor/bin/phpstan analyse app tests --level=5 || true
+          ./vendor/bin/phpstan analyse
 
       - name: Run Backend Tests
         env:
