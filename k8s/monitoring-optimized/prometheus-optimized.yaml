@@ -1,8 +1,21 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: namespace
+
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-config
   namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: config
 data:
   prometheus.yml: |
     global:
@@ -25,6 +38,7 @@ data:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
+        scrape_interval: 30s
       
       - job_name: 'todopro-backend'
         kubernetes_sd_configs:
@@ -42,13 +56,15 @@ data:
             regex: (.+)
           - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
             action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
+            regex: ([^:]+)(?::\\d+)?;(\\d+)
             replacement: $1:$2
             target_label: __address__
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: pod
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
+        scrape_interval: 15s
+        metrics_path: /api/metrics
       
       - job_name: 'kubernetes-apiservers'
         kubernetes_sd_configs:
@@ -61,6 +77,7 @@ data:
           - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
             action: keep
             regex: default;kubernetes;https
+        scrape_interval: 30s
       
       - job_name: 'kubernetes-nodes'
         kubernetes_sd_configs:
@@ -72,64 +89,114 @@ data:
         relabel_configs:
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
+        scrape_interval: 30s
+      
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?:\\d+)?;(\\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+        scrape_interval: 15s
 
   alert_rules.yml: |
     groups:
-      - name: todopro.rules
+      - name: todopro.critical
+        interval: 30s
         rules:
           - alert: HighErrorRate
             expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
-            for: 5m
+            for: 2m
             labels:
               severity: critical
+              team: backend
             annotations:
               summary: "High error rate detected in {{ $labels.job }}"
-              description: "Error rate is {{ $value }} errors per second"
-          
-          - alert: HighMemoryUsage
-            expr: (container_memory_usage_bytes{pod=~"backend-.*|frontend-.*"} / container_spec_memory_limit_bytes) > 0.8
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: "High memory usage in {{ $labels.pod }}"
-              description: "Memory usage is {{ $value | humanizePercentage }}"
-          
-          - alert: HighCPUUsage
-            expr: rate(container_cpu_usage_seconds_total{pod=~"backend-.*|frontend-.*"}[5m]) > 0.8
-            for: 5m
-            labels:
-              severity: warning
-            annotations:
-              summary: "High CPU usage in {{ $labels.pod }}"
-              description: "CPU usage is {{ $value | humanizePercentage }}"
+              description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+              runbook_url: "https://runbooks.todopro.com/high-error-rate"
           
           - alert: DatabaseDown
             expr: up{job="postgres"} == 0
             for: 1m
             labels:
               severity: critical
+              team: infrastructure
             annotations:
               summary: "PostgreSQL database is down"
               description: "PostgreSQL database has been down for more than 1 minute"
+              runbook_url: "https://runbooks.todopro.com/database-down"
           
           - alert: RedisDown
             expr: up{job="redis"} == 0
             for: 1m
             labels:
               severity: critical
+              team: infrastructure
             annotations:
               summary: "Redis cache is down"
               description: "Redis cache has been down for more than 1 minute"
+              runbook_url: "https://runbooks.todopro.com/redis-down"
+      
+      - name: todopro.warning
+        interval: 60s
+        rules:
+          - alert: HighMemoryUsage
+            expr: (container_memory_usage_bytes{pod=~"backend-.*|frontend-.*"} / container_spec_memory_limit_bytes) > 0.85
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High memory usage in {{ $labels.pod }}"
+              description: "Memory usage is {{ $value | humanizePercentage }} in {{ $labels.pod }}"
+          
+          - alert: HighCPUUsage
+            expr: rate(container_cpu_usage_seconds_total{pod=~"backend-.*|frontend-.*"}[5m]) > 0.8
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High CPU usage in {{ $labels.pod }}"
+              description: "CPU usage is {{ $value | humanizePercentage }} in {{ $labels.pod }}"
           
           - alert: PodCrashLooping
             expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
             for: 5m
             labels:
               severity: warning
+              team: platform
             annotations:
               summary: "Pod {{ $labels.pod }} is crash looping"
               description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+          
+          - alert: SlowResponseTime
+            expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Slow response time detected"
+              description: "95th percentile response time is {{ $value }}s"
 
 ---
 apiVersion: apps/v1
@@ -139,6 +206,8 @@ metadata:
   namespace: monitoring
   labels:
     app: prometheus
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: server
 spec:
   replicas: 1
   selector:
@@ -148,26 +217,33 @@ spec:
     metadata:
       labels:
         app: prometheus
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/component: server
     spec:
       serviceAccountName: prometheus
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
         fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: prometheus
-        image: prom/prometheus:v2.47.0
+        image: prom/prometheus:v2.47.2
         args:
           - '--config.file=/etc/prometheus/prometheus.yml'
           - '--storage.tsdb.path=/prometheus/'
           - '--web.console.libraries=/etc/prometheus/console_libraries'
           - '--web.console.templates=/etc/prometheus/consoles'
-          - '--storage.tsdb.retention.time=15d'
+          - '--storage.tsdb.retention.time=30d'
+          - '--storage.tsdb.retention.size=10GB'
           - '--web.enable-lifecycle'
           - '--web.enable-admin-api'
+          - '--web.external-url=http://prometheus.monitoring.svc.cluster.local:9090'
         ports:
         - containerPort: 9090
           name: web
+          protocol: TCP
         volumeMounts:
         - name: prometheus-config
           mountPath: /etc/prometheus/
@@ -175,23 +251,29 @@ spec:
           mountPath: /prometheus/
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "1Gi"
+            cpu: "500m"
+            ephemeral-storage: "2Gi"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "4Gi"
+            cpu: "2000m"
+            ephemeral-storage: "5Gi"
         livenessProbe:
           httpGet:
             path: /-/healthy
             port: 9090
           initialDelaySeconds: 30
           periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /-/ready
             port: 9090
           initialDelaySeconds: 5
           periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -203,7 +285,25 @@ spec:
         configMap:
           name: prometheus-config
       - name: prometheus-storage
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: prometheus-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: fast-ssd
+  resources:
+    requests:
+      storage: 50Gi
 
 ---
 apiVersion: v1
@@ -213,6 +313,8 @@ metadata:
   namespace: monitoring
   labels:
     app: prometheus
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: server
 spec:
   selector:
     app: prometheus
@@ -220,6 +322,7 @@ spec:
   - port: 9090
     targetPort: 9090
     name: web
+    protocol: TCP
   type: ClusterIP
 
 ---
@@ -228,12 +331,18 @@ kind: ServiceAccount
 metadata:
   name: prometheus
   namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: serviceaccount
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: rbac
 rules:
 - apiGroups: [""]
   resources:
@@ -261,6 +370,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: rbac
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

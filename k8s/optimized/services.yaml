@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: todopro
+  labels:
+    app: frontend
+    tier: frontend
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: frontend
+    tier: frontend
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: todopro
+  labels:
+    app: backend
+    tier: backend
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/api/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: backend
+    tier: backend
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: todopro
+  labels:
+    app: postgres
+    tier: database
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgres
+  selector:
+    app: postgres
+    tier: database
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: todopro
+  labels:
+    app: redis
+    tier: cache
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: cache
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: redis
+    tier: cache

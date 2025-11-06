@@ -6,6 +6,9 @@ metadata:
   labels:
     app: frontend
     tier: frontend
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "1.0.0"
 spec:
   replicas: 2
   strategy:
@@ -16,17 +19,26 @@ spec:
   selector:
     matchLabels:
       app: frontend
+      tier: frontend
   template:
     metadata:
       labels:
         app: frontend
         tier: frontend
+        app.kubernetes.io/name: todopro
+        app.kubernetes.io/component: frontend
+      annotations:
+        config.hash: "{{ .Values.configHash }}"
     spec:
+      imagePullSecrets:
+      - name: docker-registry-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: frontend
         image: todopro-frontend:latest
@@ -34,35 +46,54 @@ spec:
         ports:
         - containerPort: 3000
           name: http
-        env:
-        - name: REACT_APP_API_URL
-          value: "/api"
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: todopro-config
         resources:
           requests:
             memory: "128Mi"
             cpu: "100m"
+            ephemeral-storage: "500Mi"
           limits:
             memory: "256Mi"
             cpu: "200m"
+            ephemeral-storage: "1Gi"
         livenessProbe:
           httpGet:
             path: /health
             port: 3000
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /health
             port: 3000
+            scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 15
+          successThreshold: 1
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
           capabilities:
             drop:
             - ALL
@@ -75,8 +106,13 @@ spec:
           mountPath: /var/run
       volumes:
       - name: tmp
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 100Mi
       - name: var-cache
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 50Mi
       - name: var-run
-        emptyDir: {}
+        emptyDir:
+          sizeLimit: 10Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

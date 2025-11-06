@@ -6,6 +6,9 @@ metadata:
   labels:
     app: backend
     tier: backend
+    app.kubernetes.io/name: todopro
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0.0"
 spec:
   replicas: 2
   strategy:
@@ -16,21 +19,29 @@ spec:
   selector:
     matchLabels:
       app: backend
+      tier: backend
   template:
     metadata:
       labels:
         app: backend
         tier: backend
+        app.kubernetes.io/name: todopro
+        app.kubernetes.io/component: backend
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8000"
         prometheus.io/path: "/api/metrics"
+        config.hash: "{{ .Values.configHash }}"
     spec:
+      imagePullSecrets:
+      - name: docker-registry-secret
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: backend
         image: todopro-backend:latest
@@ -38,19 +49,11 @@ spec:
         ports:
         - containerPort: 8000
           name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: todopro-config
         env:
-        - name: APP_ENV
-          value: "production"
-        - name: APP_DEBUG
-          value: "false"
-        - name: DB_CONNECTION
-          value: "pgsql"
-        - name: DB_HOST
-          value: "postgres-service"
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_DATABASE
-          value: "todo_db"
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -71,40 +74,64 @@ spec:
             secretKeyRef:
               name: todopro-secrets
               key: JWT_SECRET
-        - name: REDIS_HOST
-          value: "redis-service"
-        - name: REDIS_PORT
-          value: "6379"
-        - name: CACHE_DRIVER
-          value: "redis"
-        - name: SESSION_DRIVER
-          value: "redis"
         resources:
           requests:
             memory: "256Mi"
             cpu: "200m"
+            ephemeral-storage: "1Gi"
           limits:
             memory: "512Mi"
             cpu: "500m"
+            ephemeral-storage: "2Gi"
         livenessProbe:
           httpGet:
             path: /api/health
             port: 8000
+            scheme: HTTP
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
           failureThreshold: 3
+          successThreshold: 1
         readinessProbe:
           httpGet:
             path: /api/health
             port: 8000
+            scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 12
+          successThreshold: 1
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 1000
           capabilities:
             drop:
             - ALL
+        volumeMounts:
+        - name: storage
+          mountPath: /var/www/html/storage
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: storage
+        emptyDir:
+          sizeLimit: 1Gi
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

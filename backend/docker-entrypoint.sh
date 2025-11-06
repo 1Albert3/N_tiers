@@ -41,10 +41,9 @@ echo "🛣️ Optimizing routes..."
 php artisan route:clear
 php artisan route:cache
 
-# Clear and cache views
-echo "👁️ Optimizing views..."
-php artisan view:clear
-php artisan view:cache
+# Clear views (skip cache for API-only app)
+echo "👁️ Clearing views..."
+php artisan view:clear || true
 
 # Create storage link if it doesn't exist
 if [ ! -L public/storage ]; then
@@ -55,5 +54,5 @@ fi
 echo "🎉 Laravel TodoPro Backend is ready!"
 echo "📡 Starting server on port 8000..."
 
-# Execute the main command
-exec "$@"
+# Start Laravel development server
+exec php artisan serve --host=0.0.0.0 --port=8000

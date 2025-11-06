@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: TodoPro CI/CD Pipeline
 
 on:
   push:
@@ -6,13 +6,19 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: docker.io
+  FRONTEND_IMAGE: todopro-frontend
+  BACKEND_IMAGE: todopro-backend
+
 jobs:
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
     
     services:
       postgres:
-        image: postgres:15
+        image: postgres:15-alpine
         env:
           POSTGRES_PASSWORD: todo_password
           POSTGRES_USER: todo_user
@@ -25,24 +31,36 @@ jobs:
         ports:
           - 5432:5432
 
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql
+        php-version: '8.3'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, redis
+        coverage: xdebug
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
     - name: Install Backend Dependencies
-      working-directory: ./todo-api-Backend
+      working-directory: ./backend
       run: composer install --no-progress --prefer-dist --optimize-autoloader
 
     - name: Install Frontend Dependencies
@@ -50,12 +68,12 @@ jobs:
       run: npm ci
 
     - name: Run Backend Tests
-      working-directory: ./todo-api-Backend
+      working-directory: ./backend
       run: |
         cp .env.example .env
         php artisan key:generate
-        php artisan migrate
-        php artisan test
+        php artisan migrate --force
+        php artisan test --coverage-clover coverage.xml
       env:
         DB_CONNECTION: pgsql
         DB_HOST: localhost
@@ -63,16 +81,26 @@ jobs:
         DB_DATABASE: todo_db
         DB_USERNAME: todo_user
         DB_PASSWORD: todo_password
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
 
     - name: Run Frontend Tests
       working-directory: ./frontend
       run: npm test -- --coverage --watchAll=false
 
+    - name: Upload Backend Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.xml
+        flags: backend
+
   security-scan:
+    name: Security Scan
     needs: test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
@@ -83,43 +111,46 @@ jobs:
         output: 'trivy-results.sarif'
     
     - name: Upload Trivy scan results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
       with:
         sarif_file: 'trivy-results.sarif'
 
   build-and-push:
+    name: Build and Push Images
     needs: [test, security-scan]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     outputs:
       frontend-tag: ${{ steps.meta-frontend.outputs.tags }}
       backend-tag: ${{ steps.meta-backend.outputs.tags }}
-      database-tag: ${{ steps.meta-database.outputs.tags }}
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Login to Docker Hub
-      uses: docker/login-action@v2
+      uses: docker/login-action@v3
       with:
+        registry: ${{ env.REGISTRY }}
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Extract metadata for Frontend
       id: meta-frontend
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
-        images: ${{ secrets.DOCKER_USERNAME }}/todo-frontend
+        images: ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.FRONTEND_IMAGE }}
         tags: |
           type=ref,event=branch
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Frontend
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: ./frontend
         push: true
@@ -127,55 +158,40 @@ jobs:
         labels: ${{ steps.meta-frontend.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
 
     - name: Extract metadata for Backend
       id: meta-backend
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
-        images: ${{ secrets.DOCKER_USERNAME }}/todo-backend
+        images: ${{ env.REGISTRY }}/${{ secrets.DOCKER_USERNAME }}/${{ env.BACKEND_IMAGE }}
         tags: |
           type=ref,event=branch
           type=sha,prefix={{branch}}-
           type=raw,value=latest,enable={{is_default_branch}}
 
     - name: Build and push Backend
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
-        context: ./todo-api-Backend
+        context: ./backend
+        target: production
         push: true
         tags: ${{ steps.meta-backend.outputs.tags }}
         labels: ${{ steps.meta-backend.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-
-    - name: Extract metadata for Database
-      id: meta-database
-      uses: docker/metadata-action@v4
-      with:
-        images: ${{ secrets.DOCKER_USERNAME }}/todo-database
-        tags: |
-          type=ref,event=branch
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-
-    - name: Build and push Database
-      uses: docker/build-push-action@v4
-      with:
-        context: ./database-tier
-        push: true
-        tags: ${{ steps.meta-database.outputs.tags }}
-        labels: ${{ steps.meta-database.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
 
   deploy-staging:
+    name: Deploy to Staging
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
     environment: staging
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup kubectl
       uses: azure/setup-kubectl@v3
@@ -191,17 +207,19 @@ jobs:
       run: |
         export KUBECONFIG=kubeconfig
         kubectl apply -k k8s/staging/
-        kubectl rollout status deployment/frontend -n todopro-staging
-        kubectl rollout status deployment/backend -n todopro-staging
+        kubectl rollout status deployment/frontend -n todopro-staging --timeout=300s
+        kubectl rollout status deployment/backend -n todopro-staging --timeout=300s
 
   deploy-production:
+    name: Deploy to Production
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment: production
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Setup kubectl
       uses: azure/setup-kubectl@v3
@@ -217,5 +235,11 @@ jobs:
       run: |
         export KUBECONFIG=kubeconfig
         kubectl apply -k k8s/production/
-        kubectl rollout status deployment/frontend -n todopro
-        kubectl rollout status deployment/backend -n todopro
+        kubectl rollout status deployment/frontend -n todopro --timeout=300s
+        kubectl rollout status deployment/backend -n todopro --timeout=300s
+
+    - name: Run Health Checks
+      run: |
+        export KUBECONFIG=kubeconfig
+        kubectl wait --for=condition=ready pod -l app=frontend -n todopro --timeout=300s
+        kubectl wait --for=condition=ready pod -l app=backend -n todopro --timeout=300s

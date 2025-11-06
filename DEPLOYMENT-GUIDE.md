@@ -1,218 +1,274 @@
-# 🚀 Guide de Déploiement TodoPro - Architecture Optimisée
+# 🚀 TodoPro - Guide de Déploiement DevOps
 
-## ✅ **Corrections Appliquées**
+## 📋 Prérequis
 
-### 🔧 **Problèmes Résolus**
-- ✅ **Architecture unifiée** - Database intégrée au backend
-- ✅ **Frontend stable** - Erreurs React DOM éliminées
-- ✅ **Sécurité renforcée** - Rate limiting, validation robuste
-- ✅ **Docker optimisé** - Multi-stage builds, health checks
-- ✅ **Kubernetes production-ready** - HPA, NetworkPolicy, Secrets
+### Environnement Local
+- **Docker Desktop** 4.20+ avec Kubernetes activé
+- **kubectl** 1.28+
+- **Make** (optionnel, pour les commandes automatisées)
+- **Git** 2.40+
 
-### 🏗️ **Nouvelle Structure**
-```
-todopro/
-├── frontend/                 # React TypeScript optimisé
-├── backend/                  # Laravel avec DB intégrée
-├── k8s/                     # Manifests Kubernetes
-├── .github/workflows/       # CI/CD Pipeline complet
-├── docker-compose.yml       # Développement
-├── docker-compose.production.yml # Production
-└── README.md
-```
+### Environnement Production
+- **Cluster Kubernetes** 1.28+
+- **Ingress Controller** (nginx recommandé)
+- **Storage Class** pour les volumes persistants
+- **Registry Docker** (Docker Hub ou privé)
 
-## 🚀 **Déploiement**
+## 🔧 Installation Rapide
 
-### **1. Développement Local**
+### 1. Clonage et Configuration
 ```bash
-# Démarrer Docker Desktop
-docker-compose up -d
-
-# Vérifier les services
-docker-compose ps
-curl http://localhost:3000
-curl http://localhost:8000/api/health
+git clone <repository-url>
+cd todopro
+make setup
 ```
 
-### **2. Production Docker**
+### 2. Génération des Clés Sécurisées
 ```bash
-# Variables d'environnement
-export APP_KEY=$(php artisan key:generate --show)
-export JWT_SECRET=$(openssl rand -base64 32)
-export DB_PASSWORD=$(openssl rand -base64 32)
-
-# Déploiement
-docker-compose -f docker-compose.production.yml up -d
+make generate-keys
+# Copier les clés générées dans .env
 ```
 
-### **3. Kubernetes**
+### 3. Démarrage Local
 ```bash
-# Activer Kubernetes dans Docker Desktop
-# Settings > Kubernetes > Enable Kubernetes
-
-# Construire les images
-docker build -t todopro-frontend:latest ./frontend
-docker build -t todopro-backend:latest ./backend
-
-# Charger dans minikube (si utilisé)
-minikube image load todopro-frontend:latest
-minikube image load todopro-backend:latest
-
-# Déployer
-kubectl apply -k k8s/base/
-
-# Vérifier
-kubectl get pods -n todopro
-kubectl get svc -n todopro
-
-# Accès
-minikube service frontend-service -n todopro
+make dev
 ```
 
-## 🔒 **Sécurité**
+**URLs d'accès :**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- API Health: http://localhost:8000/api/health
 
-### **Secrets à Configurer**
+## ☸️ Déploiement Kubernetes
+
+### 1. Préparation des Secrets
 ```bash
-# GitHub Secrets pour CI/CD
-GITHUB_TOKEN=ghp_xxx
-SONAR_TOKEN=xxx
-KUBE_CONFIG_STAGING=base64_encoded_kubeconfig
-KUBE_CONFIG_PROD=base64_encoded_kubeconfig
-SLACK_WEBHOOK_URL=https://hooks.slack.com/xxx
-
-# Kubernetes Secrets
+# Créer les secrets Kubernetes
 kubectl create secret generic todopro-secrets \
-  --from-literal=APP_KEY="base64:$(openssl rand -base64 32)" \
-  --from-literal=JWT_SECRET="$(openssl rand -base64 32)" \
-  --from-literal=DB_PASSWORD="$(openssl rand -base64 32)" \
+  --from-literal=DB_USERNAME=todo_user \
+  --from-literal=DB_PASSWORD=<secure-password> \
+  --from-literal=APP_KEY=<generated-key> \
+  --from-literal=JWT_SECRET=<generated-secret> \
+  -n todopro
+
+# Créer le secret pour le registry Docker
+kubectl create secret docker-registry todopro-registry-secret \
+  --docker-server=docker.io \
+  --docker-username=<username> \
+  --docker-password=<token> \
   -n todopro
 ```
 
-## 📊 **Monitoring & Observabilité**
-
-### **Métriques Disponibles**
-- **Health Checks** : `/api/health`
-- **Logs centralisés** : Docker logs + Kubernetes logs
-- **Performance** : Redis cache, PostgreSQL optimisé
-- **Sécurité** : Rate limiting, validation stricte
-
-### **Commandes de Debug**
+### 2. Déploiement
 ```bash
-# Logs Docker
-docker-compose logs -f backend
-docker-compose logs -f frontend
+# Déploiement complet
+make deploy-k8s
 
-# Logs Kubernetes
-kubectl logs -f deployment/backend -n todopro
-kubectl logs -f deployment/frontend -n todopro
-
-# Métriques
-kubectl top pods -n todopro
-kubectl describe hpa -n todopro
-```
-
-## 🧪 **Tests**
-
-### **Frontend**
-```bash
-cd frontend
-npm test                    # Unit tests
-npm run test:coverage      # Coverage
-npm run test:e2e          # E2E tests
-npm run lint              # ESLint
-```
-
-### **Backend**
-```bash
-cd backend
-php artisan test          # PHPUnit
-vendor/bin/phpstan analyse # Static analysis
-vendor/bin/php-cs-fixer fix # Code style
-```
-
-## 🔄 **CI/CD Pipeline**
-
-### **Déclencheurs**
-- **Push sur `main`** → Tests + Build + Deploy Production
-- **Push sur `develop`** → Tests + Build + Deploy Staging  
-- **Pull Request** → Tests uniquement
-
-### **Étapes**
-1. **Security Scan** (Trivy, SonarCloud)
-2. **Tests** (Frontend Jest + Backend PHPUnit)
-3. **Build Images** (Docker multi-stage)
-4. **Deploy** (Kubernetes rolling update)
-5. **Smoke Tests** (Health checks)
-
-## 🎯 **Performance**
-
-### **Optimisations Appliquées**
-- **Frontend** : Code splitting, lazy loading, memoization
-- **Backend** : OPcache, Redis cache, query optimization
-- **Database** : Indexes, connection pooling, read replicas
-- **Infrastructure** : Resource limits, HPA, CDN ready
-
-### **Métriques Cibles**
-- **Response Time** : < 200ms (API)
-- **First Paint** : < 1.5s (Frontend)
-- **Availability** : 99.9%
-- **Error Rate** : < 0.1%
-
-## 🆘 **Troubleshooting**
-
-### **Problèmes Courants**
-
-#### **1. Erreur de connexion DB**
-```bash
-# Vérifier PostgreSQL
-kubectl exec -it postgres-0 -n todopro -- psql -U todo_user -d todo_db -c "SELECT 1;"
-
-# Recréer les secrets
-kubectl delete secret todopro-secrets -n todopro
+# Ou manuellement
 kubectl apply -k k8s/base/
 ```
 
-#### **2. Images non trouvées**
+### 3. Vérification
 ```bash
-# Reconstruire
-docker build --no-cache -t todopro-frontend:latest ./frontend
-docker build --no-cache -t todopro-backend:latest ./backend
-
-# Charger dans minikube
-minikube image load todopro-frontend:latest
-minikube image load todopro-backend:latest
+kubectl get pods -n todopro
+kubectl get services -n todopro
+make health
 ```
 
-#### **3. Pods en CrashLoop**
-```bash
-# Diagnostiquer
-kubectl describe pod <pod-name> -n todopro
-kubectl logs <pod-name> -n todopro --previous
+## 📊 Monitoring
 
-# Redémarrer
+### Déploiement du Stack de Monitoring
+```bash
+make deploy-monitoring
+```
+
+### Accès aux Interfaces
+```bash
+# Grafana
+kubectl port-forward svc/grafana 3000:3000 -n monitoring
+# Accès: http://localhost:3000 (admin/admin123)
+
+# Prometheus
+kubectl port-forward svc/prometheus 9090:9090 -n monitoring
+# Accès: http://localhost:9090
+```
+
+## 🔄 Pipeline CI/CD
+
+### Configuration GitHub Actions
+
+1. **Secrets à configurer dans GitHub :**
+```
+DOCKER_USERNAME=<dockerhub-username>
+DOCKER_PASSWORD=<dockerhub-token>
+KUBE_CONFIG_STAGING=<base64-encoded-kubeconfig>
+KUBE_CONFIG_PROD=<base64-encoded-kubeconfig>
+```
+
+2. **Workflow automatique :**
+- **Push sur `develop`** → Tests + Build + Deploy Staging
+- **Push sur `main`** → Tests + Build + Deploy Production
+- **Pull Request** → Tests uniquement
+
+### Commandes Manuelles
+```bash
+# Tests locaux
+make test
+
+# Scan de sécurité
+make security-scan
+
+# Build et push des images
+docker build -t todopro-frontend:latest ./frontend
+docker build -t todopro-backend:latest ./backend
+```
+
+## 🗄️ Gestion de la Base de Données
+
+### Backup
+```bash
+make backup-db
+```
+
+### Restauration
+```bash
+make restore-db FILE=backup_20240101_120000.sql
+```
+
+### Migration
+```bash
+# En local
+docker-compose exec backend php artisan migrate
+
+# En Kubernetes
+kubectl exec -it deployment/backend -n todopro -- php artisan migrate
+```
+
+## 🔒 Sécurité
+
+### Bonnes Pratiques Appliquées
+- ✅ **Secrets chiffrés** dans Kubernetes
+- ✅ **NetworkPolicies** pour isoler les services
+- ✅ **Non-root containers** 
+- ✅ **Scan de vulnérabilités** automatique
+- ✅ **HTTPS/TLS** via Ingress
+- ✅ **RBAC** pour Prometheus
+
+### Rotation des Secrets
+```bash
+# Générer de nouveaux secrets
+make generate-keys
+
+# Mettre à jour dans Kubernetes
+kubectl patch secret todopro-secrets -n todopro -p='{"data":{"APP_KEY":"<new-key>"}}'
 kubectl rollout restart deployment/backend -n todopro
 ```
 
-## 📈 **Roadmap**
+## 🚨 Dépannage
 
-### **Phase 2 - Observabilité**
-- [ ] Prometheus + Grafana
-- [ ] Jaeger tracing
-- [ ] ELK Stack logging
-- [ ] Alerting (PagerDuty)
+### Problèmes Courants
 
-### **Phase 3 - Scalabilité**
-- [ ] Multi-region deployment
-- [ ] CDN integration
-- [ ] Database sharding
-- [ ] Microservices migration
+#### 1. Pods en CrashLoopBackOff
+```bash
+kubectl describe pod <pod-name> -n todopro
+kubectl logs <pod-name> -n todopro
+```
 
-### **Phase 4 - Sécurité Avancée**
-- [ ] OAuth2/OIDC
-- [ ] Vault secrets management
-- [ ] Network policies
-- [ ] Security scanning automation
+#### 2. Base de données inaccessible
+```bash
+kubectl exec -it statefulset/postgres -n todopro -- psql -U todo_user -d todo_db
+```
+
+#### 3. Images non trouvées
+```bash
+# Vérifier les secrets du registry
+kubectl get secret todopro-registry-secret -n todopro -o yaml
+
+# Reconstruire les images
+make build
+```
+
+### Commandes de Debug
+```bash
+# Logs en temps réel
+make logs
+
+# État des ressources
+kubectl get all -n todopro
+
+# Événements récents
+kubectl get events -n todopro --sort-by='.lastTimestamp'
+```
+
+## 📈 Scaling et Performance
+
+### Scaling Horizontal
+```bash
+# Manuel
+kubectl scale deployment backend --replicas=5 -n todopro
+
+# Automatique (HPA configuré)
+kubectl get hpa -n todopro
+```
+
+### Optimisation des Ressources
+```yaml
+# Ajuster dans les deployments
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+```
+
+## 🔄 Mise à Jour
+
+### Rolling Update
+```bash
+# Nouvelle version
+kubectl set image deployment/backend backend=todopro-backend:v2.0.0 -n todopro
+kubectl rollout status deployment/backend -n todopro
+```
+
+### Rollback
+```bash
+kubectl rollout undo deployment/backend -n todopro
+```
+
+## 📞 Support
+
+### Logs et Métriques
+- **Grafana**: Dashboards de monitoring
+- **Prometheus**: Métriques et alertes
+- **Kubernetes Events**: `kubectl get events`
+
+### Contacts
+- **DevOps Team**: devops@company.com
+- **Documentation**: Ce README et les commentaires dans le code
+- **Issues**: GitHub Issues du projet
 
 ---
 
-**🎉 TodoPro est maintenant production-ready avec une architecture DevOps moderne !**
+## ✅ Checklist de Déploiement
+
+### Pré-déploiement
+- [ ] Secrets générés et configurés
+- [ ] Images Docker buildées et pushées
+- [ ] Cluster Kubernetes accessible
+- [ ] Storage classes configurées
+- [ ] Ingress controller déployé
+
+### Post-déploiement
+- [ ] Tous les pods sont Running
+- [ ] Health checks passent
+- [ ] Base de données accessible
+- [ ] Monitoring fonctionnel
+- [ ] Tests de bout en bout réussis
+
+### Production
+- [ ] Backup automatique configuré
+- [ ] Alertes configurées
+- [ ] Documentation à jour
+- [ ] Équipe formée sur les procédures

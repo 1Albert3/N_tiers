@@ -1,13 +1,29 @@
+# ==============================================
 # Multi-stage optimized Dockerfile for Laravel Backend
+# ==============================================
+
+# Composer dependencies stage
 FROM composer:2.7 AS composer-deps
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs \
+    --optimize-autoloader
 
-# Production stage
-FROM php:8.2-fpm-alpine AS production
+# Node dependencies stage (for Laravel Mix if needed)
+FROM node:18-alpine AS node-deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
 
-# Install system dependencies and PHP extensions in one layer
+# Base PHP stage
+FROM php:8.2-fpm-alpine AS base
+
+# Install system dependencies and PHP extensions
 RUN apk update && apk add --no-cache \
     curl \
     bash \
@@ -34,15 +50,18 @@ RUN addgroup -g 1000 laravel && adduser -u 1000 -G laravel -s /bin/sh -D laravel
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer dependencies first (better caching)
+# Copy PHP configuration
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-custom.ini
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
+# Production stage
+FROM base AS production
+
+# Copy composer dependencies
 COPY --from=composer-deps --chown=laravel:laravel /app/vendor ./vendor
 
 # Copy application code
 COPY --chown=laravel:laravel . .
-
-# PHP configuration optimized
-COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-custom.ini
-COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 # Generate optimized autoloader
 RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
@@ -53,21 +72,31 @@ RUN chown -R laravel:laravel /var/www/html \
     && chmod -R 755 /var/www/html/bootstrap/cache \
     && chmod +x /var/www/html/docker-entrypoint.sh
 
-# Health check optimized
+# Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
-# Switch to non-root user
+# Security context
 USER laravel
-
-# Expose port
 EXPOSE 8000
-
-# Set entrypoint
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # Development stage
-FROM production AS development
+FROM base AS development
 USER root
-RUN composer update && composer install --dev
+
+# Copy application code first
+COPY --chown=laravel:laravel . .
+
+# Install development dependencies
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --dev
+
+# Set permissions
+RUN chown -R laravel:laravel /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache \
+    && chmod +x /var/www/html/docker-entrypoint.sh
+
 USER laravel
+EXPOSE 8000
+ENTRYPOINT ["./docker-entrypoint.sh"]

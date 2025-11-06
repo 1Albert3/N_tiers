@@ -11,26 +11,18 @@ services:
       - NODE_ENV=development
       - REACT_APP_API_URL=http://localhost:8000/api
       - GENERATE_SOURCEMAP=false
-      - FAST_REFRESH=true
     depends_on:
       backend:
         condition: service_healthy
     networks:
       - todo-network
     restart: unless-stopped
-    volumes:
-      - ./frontend/src:/app/src:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
-    develop:
-      watch:
-        - action: sync
-          path: ./frontend/src
-          target: /app/src
 
   backend:
     build:
@@ -42,18 +34,18 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
-      - APP_KEY=base64:YWJjZGVmZ2hpams1bG1ub3BxcnN0dXZ3eHl6MTIzNDU2Nzg5MA==
+      - APP_KEY=${APP_KEY:-}
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_DATABASE=todo_db
       - DB_USERNAME=todo_user
-      - DB_PASSWORD=todo_password
-      - JWT_SECRET=your-jwt-secret-key-change-this-in-production
+      - DB_PASSWORD=${DB_PASSWORD:-todo_password}
+      - JWT_SECRET=${JWT_SECRET:-}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - CACHE_DRIVER=file
-      - SESSION_DRIVER=file
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=redis
       - CORS_ALLOWED_ORIGINS=http://localhost:3000
     depends_on:
       postgres:
@@ -71,15 +63,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-    develop:
-      watch:
-        - action: sync
-          path: ./backend
-          target: /var/www/html
-          ignore:
-            - vendor/
-            - node_modules/
+      start_period: 60s
 
   postgres:
     image: postgres:15-alpine
@@ -88,7 +72,7 @@ services:
     environment:
       - POSTGRES_DB=todo_db
       - POSTGRES_USER=todo_user
-      - POSTGRES_PASSWORD=todo_password
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-todo_password}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -107,7 +91,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     networks:
