@@ -30,30 +30,35 @@ Route::get('health', function () {
 
 // Route métriques Prometheus
 Route::get('metrics', function () {
-    $metrics = [
-        '# HELP http_requests_total Total HTTP requests',
-        '# TYPE http_requests_total counter',
-        'http_requests_total{method="GET",status="200"} ' . rand(100, 1000),
-        'http_requests_total{method="POST",status="200"} ' . rand(50, 500),
-        'http_requests_total{method="PUT",status="200"} ' . rand(10, 100),
-        'http_requests_total{method="DELETE",status="200"} ' . rand(5, 50),
-        '',
-        '# HELP http_request_duration_seconds HTTP request duration',
-        '# TYPE http_request_duration_seconds histogram',
-        'http_request_duration_seconds_bucket{le="0.1"} ' . rand(50, 200),
-        'http_request_duration_seconds_bucket{le="0.5"} ' . rand(100, 400),
-        'http_request_duration_seconds_bucket{le="1.0"} ' . rand(150, 600),
-        'http_request_duration_seconds_bucket{le="+Inf"} ' . rand(200, 800),
-        '',
-        '# HELP todopro_tasks_total Total tasks created',
-        '# TYPE todopro_tasks_total counter',
-        'todopro_tasks_total ' . \App\Models\Task::count(),
-        '',
-        '# HELP todopro_users_total Total registered users',
-        '# TYPE todopro_users_total counter',
-        'todopro_users_total ' . \App\Models\User::count(),
-    ];
+    try {
+        $users = \App\Models\User::count();
+        $tasks = \App\Models\Task::count();
+        
+        $metrics = [
+            "# HELP app_status Application status",
+            "# TYPE app_status gauge",
+            "app_status 1",
+            "# HELP app_uptime Application uptime",
+            "# TYPE app_uptime counter",
+            "app_uptime " . time(),
+            "# HELP app_total_users Total number of users",
+            "# TYPE app_total_users gauge",
+            "app_total_users $users",
+            "# HELP app_total_tasks Total number of tasks",
+            "# TYPE app_total_tasks gauge",
+            "app_total_tasks $tasks"
+        ];
+    } catch (\Exception $e) {
+        $metrics = [
+            "# HELP app_status Application status",
+            "# TYPE app_status gauge",
+            "app_status 1",
+            "# HELP app_uptime Application uptime",
+            "# TYPE app_uptime counter",
+            "app_uptime " . time()
+        ];
+    }
     
-    return response(implode("\n", $metrics))
-        ->header('Content-Type', 'text/plain; version=0.0.4');
+    return response(implode("\n", $metrics), 200)
+        ->header('Content-Type', 'text/plain');
 });

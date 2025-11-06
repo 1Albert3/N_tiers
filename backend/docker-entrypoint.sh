@@ -41,9 +41,8 @@ echo "🛣️ Optimizing routes..."
 php artisan route:clear
 php artisan route:cache
 
-# Clear views (skip cache for API-only app)
-echo "👁️ Clearing views..."
-php artisan view:clear || true
+# Skip view operations for API-only app
+echo "👁️ Skipping view operations (API-only)..."
 
 # Create storage link if it doesn't exist
 if [ ! -L public/storage ]; then
