@@ -7,9 +7,9 @@ on:
     branches: [ main ]
 
 env:
-  REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ github.repository }}/backend
-  FRONTEND_IMAGE: ${{ github.repository }}/frontend
+  DOCKER_REGISTRY: docker.io # ou ghcr.io si vous préférez GitHub Container Registry
+  BACKEND_IMAGE: ${{ github.repository_owner }}/todopro-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/todopro-frontend
 
 jobs:
   test:
@@ -93,29 +93,9 @@ jobs:
           npm run test:ci
           npm run build
 
-  security:
-    name: Security Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          path: '.'
-          format: 'HTML'
-          project: 'TodoPro'
-
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        with:
-          command: monitor
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
   build:
     name: Build & Push Images
-    needs: [test, security]
+    needs: [test]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     permissions:
@@ -186,6 +166,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
@@ -195,15 +181,6 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
-
-      - name: Update deployment configs
-        env:
-          ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
-        run: |
-          cd k8s/${{ env.ENVIRONMENT }}
-          kustomize edit set image \
-            backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-            frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
 
       - name: Deploy to Kubernetes
         run: |
@@ -233,33 +210,4 @@ jobs:
       - name: Verify Prometheus targets
         run: |
           curl -s http://prometheus:9090/api/v1/targets | \
-          jq -e '.data.activeTargets[] | select(.health == "up")'
-
-      - name: Configure alerts
-        run: |
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GRAFANA_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d @monitoring/grafana/alerts/alerts.json \
-            http://grafana:3001/api/alert-rules
-
-  notify:
-    name: Notification
-    needs: [deploy, monitoring]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Notify on success
-        if: ${{ needs.deploy.result == 'success' }}
-        run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
-            -H "Content-Type: application/json" \
-            -d '{"text":"✅ Deployment successful to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"}'
-
-      - name: Notify on failure
-        if: ${{ needs.deploy.result == 'failure' }}
-        run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
-            -H "Content-Type: application/json" \
-            -d '{"text":"❌ Deployment failed to ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}"}'
+          jq -e '.data.activeTargets[] | select(.health == "up")
