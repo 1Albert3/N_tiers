@@ -10,6 +10,8 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
   const [title, setTitle] = useState(initial?.title || '');
   const [description, setDescription] = useState(initial?.description || '');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(initial?.priority || 'medium');
+  const [dueDate, setDueDate] = useState(initial?.due_date || '');
+  const [category, setCategory] = useState(initial?.category || 'work');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -20,10 +22,22 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
       newErrors.title = 'Le titre est requis';
     } else if (title.length < 3) {
       newErrors.title = 'Le titre doit contenir au moins 3 caractères';
+    } else if (title.length > 100) {
+      newErrors.title = 'Le titre ne peut pas dépasser 100 caractères';
     }
     
     if (description && description.length > 500) {
       newErrors.description = 'La description ne peut pas dépasser 500 caractères';
+    }
+    
+    if (dueDate) {
+      const selectedDate = new Date(dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        newErrors.dueDate = 'La date d\'échéance ne peut pas être dans le passé';
+      }
     }
     
     setErrors(newErrors);
@@ -40,7 +54,9 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
       await onSave({ 
         title: title.trim(), 
         description: description.trim(), 
-        priority 
+        priority,
+        due_date: dueDate || null,
+        category
       });
       
       // Reset form only if not editing
@@ -48,6 +64,8 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
         setTitle('');
         setDescription('');
         setPriority('medium');
+        setDueDate('');
+        setCategory('work');
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
@@ -57,9 +75,18 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
   }
 
   const priorityOptions = [
-    { value: 'low', label: '🟢 Faible', color: 'var(--success)' },
-    { value: 'medium', label: '🟡 Moyenne', color: 'var(--warning)' },
-    { value: 'high', label: '🔴 Élevée', color: 'var(--error)' }
+    { value: 'low', label: '🟢 Faible', color: '#10b981', desc: 'Peut attendre' },
+    { value: 'medium', label: '🟡 Moyenne', color: '#f59e0b', desc: 'Important' },
+    { value: 'high', label: '🔴 Élevée', color: '#ef4444', desc: 'Urgent' }
+  ];
+  
+  const categoryOptions = [
+    { value: 'work', label: '💼 Travail', color: '#3b82f6' },
+    { value: 'personal', label: '🏠 Personnel', color: '#8b5cf6' },
+    { value: 'health', label: '🏥 Santé', color: '#10b981' },
+    { value: 'finance', label: '💰 Finance', color: '#f59e0b' },
+    { value: 'education', label: '📚 Éducation', color: '#06b6d4' },
+    { value: 'other', label: '📌 Autre', color: '#6b7280' }
   ];
 
   return (
@@ -127,20 +154,22 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
         <label className="form-label">
           Priorité
         </label>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-2)' }}>
           {priorityOptions.map(option => (
             <label 
               key={option.value}
               style={{ 
                 display: 'flex', 
+                flexDirection: 'column',
                 alignItems: 'center', 
-                gap: 'var(--space-2)',
+                gap: 'var(--space-1)',
                 cursor: 'pointer',
-                padding: 'var(--space-2) var(--space-3)',
-                border: `2px solid ${priority === option.value ? option.color : 'var(--gray-200)'}`,
-                borderRadius: 'var(--radius)',
-                background: priority === option.value ? `${option.color}10` : 'transparent',
-                transition: 'all 0.2s ease'
+                padding: 'var(--space-3)',
+                border: `2px solid ${priority === option.value ? option.color : '#e5e7eb'}`,
+                borderRadius: '12px',
+                background: priority === option.value ? `${option.color}15` : 'white',
+                transition: 'all 0.2s ease',
+                boxShadow: priority === option.value ? `0 4px 12px ${option.color}25` : '0 1px 3px rgba(0,0,0,0.1)'
               }}
             >
               <input 
@@ -152,12 +181,78 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
                 style={{ display: 'none' }}
                 disabled={loading}
               />
-              <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>
+              <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
                 {option.label}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>
+                {option.desc}
               </span>
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label" htmlFor="category">
+          Catégorie
+        </label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 'var(--space-2)' }}>
+          {categoryOptions.map(option => (
+            <label 
+              key={option.value}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center', 
+                gap: 'var(--space-1)',
+                cursor: 'pointer',
+                padding: 'var(--space-2)',
+                border: `2px solid ${category === option.value ? option.color : '#e5e7eb'}`,
+                borderRadius: '8px',
+                background: category === option.value ? `${option.color}15` : 'white',
+                transition: 'all 0.2s ease',
+                fontSize: '0.75rem'
+              }}
+            >
+              <input 
+                type="radio" 
+                name="category" 
+                value={option.value}
+                checked={category === option.value}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{ display: 'none' }}
+                disabled={loading}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label" htmlFor="dueDate">
+          Date d'échéance (optionnelle)
+        </label>
+        <input 
+          id="dueDate"
+          type="date"
+          className={`form-input ${errors.dueDate ? 'error' : ''}`}
+          value={dueDate} 
+          onChange={(e) => {
+            setDueDate(e.target.value);
+            if (errors.dueDate) setErrors(prev => ({...prev, dueDate: ''}));
+          }}
+          disabled={loading}
+          min={new Date().toISOString().split('T')[0]}
+          style={{
+            borderColor: errors.dueDate ? '#ef4444' : undefined
+          }}
+        />
+        {errors.dueDate && (
+          <div style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: 'var(--space-1)' }}>
+            {errors.dueDate}
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-6)' }}>
@@ -187,7 +282,7 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
             </>
           ) : (
             <>
-              💾 {initial ? 'Modifier' : 'Créer la tâche'}
+              {initial ? '✏️ Modifier la tâche' : '✨ Créer la tâche'}
             </>
           )}
         </button>

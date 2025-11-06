@@ -10,6 +10,7 @@ interface User {
 interface AuthContextType {
   token: string | null;
   user: User | null;
+  loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
@@ -40,6 +41,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     }
   });
+
+  const [loading, setLoading] = useState(true);
+
+  // Synchroniser l'état avec localStorage au démarrage
+  React.useEffect(() => {
+    let isMounted = true;
+    
+    const initializeAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        
+        if (storedToken && storedUser && isMounted) {
+          const parsedUser = JSON.parse(storedUser);
+          setToken(storedToken);
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (isMounted) {
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    initializeAuth();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const res = await apiLogin({ email, password });
@@ -75,6 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     token,
     user,
+    loading,
     signIn,
     signUp,
     signOut

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
@@ -10,20 +10,39 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   const auth = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     
-    try {
-      await auth.signIn(email, password);
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError('Email ou mot de passe incorrect');
-    } finally {
-      setLoading(false);
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      try {
+        await auth.signIn(email, password);
+        // Redirection immédiate après connexion réussie
+        window.location.href = '/dashboard';
+        return;
+      } catch (err: any) {
+        console.error(`Tentative ${retryCount + 1} échouée:`, err);
+        
+        if (retryCount === maxRetries) {
+          // Dernière tentative échouée
+          if (err.message.includes('serveur') || err.message.includes('connexion')) {
+            setError('Problème de connexion au serveur. Vérifiez votre connexion internet.');
+          } else {
+            setError(err.message || 'Email ou mot de passe incorrect');
+          }
+          setLoading(false);
+          return;
+        }
+        
+        retryCount++;
+        // Attendre avant de réessayer
+        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+      }
     }
   };
 

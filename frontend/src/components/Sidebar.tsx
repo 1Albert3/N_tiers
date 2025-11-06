@@ -9,7 +9,7 @@ const Sidebar: React.FC = () => {
   if (!user) return null;
 
   const menuItems = [
-    { path: '/', icon: '📊', label: 'Dashboard' },
+    { path: '/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/tasks', icon: '✅', label: 'Mes Tâches' },
     { path: '/reports', icon: '📈', label: 'Rapports' },
   ];

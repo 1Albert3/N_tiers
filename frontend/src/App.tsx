@@ -6,11 +6,17 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
 import TaskList from './components/TaskList';
+import ReportsPage from './pages/ReportsPage';
 import Sidebar from './components/Sidebar';
+import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
+  
+  if (auth.loading) {
+    return <LoadingSpinner />;
+  }
   
   if (!auth.user) {
     return <Navigate to="/" replace />;
@@ -45,7 +51,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuth();
   
-  if (auth.user) {
+  if (auth.loading) {
+    return <LoadingSpinner />;
+  }
+  
+  // Si l'utilisateur est connecté, rediriger vers le dashboard
+  if (auth.user && auth.token) {
     return <Navigate to="/dashboard" replace />;
   }
   
@@ -94,6 +105,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TaskList />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
               </ProtectedRoute>
             } 
           />

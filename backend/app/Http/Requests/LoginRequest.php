@@ -26,8 +26,7 @@ class LoginRequest extends FormRequest
                 'required',
                 'string',
                 'email',
-                'max:255',
-                'exists:users,email'
+                'max:255'
             ],
             'password' => [
                 'required',

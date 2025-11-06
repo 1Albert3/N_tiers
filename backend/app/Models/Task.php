@@ -16,6 +16,7 @@ class Task extends Model
         'is_completed',
         'priority',
         'due_date',
+        'category',
         'user_id'
     ];
 
