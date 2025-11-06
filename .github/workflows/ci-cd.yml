@@ -84,7 +84,7 @@ jobs:
     name: Deploy to Kubernetes
     needs: docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -110,7 +110,7 @@ jobs:
     name: Setup Monitoring
     needs: deploy
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
