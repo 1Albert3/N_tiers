@@ -22,14 +22,14 @@ services:
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
-      - APP_KEY=base64:YWJjZGVmZ2hpams1bG1ub3BxcnN0dXZ3eHl6MTIzNDU2Nzg5MA==
+      - APP_KEY=base64:I6hMKsZY3fdxpAHQZiGzSabJBwUdU8NUKJKKDcBlMMU=
       - DB_CONNECTION=pgsql
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_DATABASE=todo_db
       - DB_USERNAME=todo_user
       - DB_PASSWORD=todo_password
-      - JWT_SECRET=your-jwt-secret-key-change-this-in-production
+      - JWT_SECRET=sG2HxLvslqCsW6z6B0qx4xT6wvCrO2i0fZdTGO1NeteZUs2d+u7eBPjqDGDJH4ym/YlMdreKqkK3be5Lo7U4Q==
     depends_on:
       - postgres
     networks:
