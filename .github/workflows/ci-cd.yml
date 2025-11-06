@@ -2,7 +2,7 @@ name: TodoPro CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, Albert]
   pull_request:
     branches: [ main ]
 
