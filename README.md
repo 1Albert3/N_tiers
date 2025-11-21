@@ -353,12 +353,6 @@ kubectl get events -n todopro
 
 ---
 
-## 📄 Licence
-
-Ce projet est sous licence MIT.
-
----
-
 ## 🤝 Contribution
 
 1. Fork le projet
