@@ -2,7 +2,7 @@ name: TodoPro CI/CD Simple
 
 on:
   push:
-    branches: [ main, develop, GROUPE1/todopro ]
+    branches: [ main, develop, GROUPE1/todopro, fix/regist ]
   pull_request:
     branches: [ main ]
 
