@@ -110,7 +110,15 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
           }}
         />
         {errors.title && (
-          <div style={{ color: 'var(--error)', fontSize: '0.875rem', marginTop: 'var(--space-1)' }}>
+          <div style={{ 
+            color: 'var(--error)', 
+            fontSize: '0.8125rem', 
+            marginTop: 'var(--space-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)'
+          }}>
+            <span>⚠️</span>
             {errors.title}
           </div>
         )}
@@ -136,15 +144,24 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
           }}
         />
         <div style={{ 
-          fontSize: '0.75rem', 
-          color: 'var(--gray-500)', 
-          marginTop: 'var(--space-1)',
-          textAlign: 'right'
+          fontSize: '0.8125rem', 
+          color: description.length > 450 ? 'var(--warning)' : 'var(--gray-500)', 
+          marginTop: 'var(--space-2)',
+          textAlign: 'right',
+          fontWeight: description.length > 450 ? '600' : '400'
         }}>
           {description.length}/500 caractères
         </div>
         {errors.description && (
-          <div style={{ color: 'var(--error)', fontSize: '0.875rem', marginTop: 'var(--space-1)' }}>
+          <div style={{ 
+            color: 'var(--error)', 
+            fontSize: '0.8125rem', 
+            marginTop: 'var(--space-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)'
+          }}>
+            <span>⚠️</span>
             {errors.description}
           </div>
         )}
@@ -154,7 +171,7 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
         <label className="form-label">
           Priorité
         </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-3)' }}>
           {priorityOptions.map(option => (
             <label 
               key={option.value}
@@ -164,12 +181,12 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
                 alignItems: 'center', 
                 gap: 'var(--space-1)',
                 cursor: 'pointer',
-                padding: 'var(--space-3)',
+                padding: 'var(--space-4)',
                 border: `2px solid ${priority === option.value ? option.color : '#e5e7eb'}`,
-                borderRadius: '12px',
+                borderRadius: 'var(--radius-md)',
                 background: priority === option.value ? `${option.color}15` : 'white',
                 transition: 'all 0.2s ease',
-                boxShadow: priority === option.value ? `0 4px 12px ${option.color}25` : '0 1px 3px rgba(0,0,0,0.1)'
+                boxShadow: priority === option.value ? `0 4px 12px ${option.color}30` : '0 1px 2px rgba(0,0,0,0.05)'
               }}
             >
               <input 
@@ -181,10 +198,10 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
                 style={{ display: 'none' }}
                 disabled={loading}
               />
-              <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
+              <span style={{ fontSize: '0.9375rem', fontWeight: '600', color: priority === option.value ? option.color : '#374151' }}>
                 {option.label}
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#6b7280', textAlign: 'center' }}>
+              <span style={{ fontSize: '0.8125rem', color: '#6b7280', textAlign: 'center' }}>
                 {option.desc}
               </span>
             </label>
@@ -196,7 +213,7 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
         <label className="form-label" htmlFor="category">
           Catégorie
         </label>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 'var(--space-3)' }}>
           {categoryOptions.map(option => (
             <label 
               key={option.value}
@@ -206,12 +223,13 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
                 alignItems: 'center', 
                 gap: 'var(--space-1)',
                 cursor: 'pointer',
-                padding: 'var(--space-2)',
+                padding: 'var(--space-3)',
                 border: `2px solid ${category === option.value ? option.color : '#e5e7eb'}`,
-                borderRadius: '8px',
+                borderRadius: 'var(--radius)',
                 background: category === option.value ? `${option.color}15` : 'white',
                 transition: 'all 0.2s ease',
-                fontSize: '0.75rem'
+                fontSize: '0.8125rem',
+                fontWeight: category === option.value ? '600' : '500'
               }}
             >
               <input 
@@ -245,17 +263,26 @@ const TaskForm: React.FC<Props> = ({ onSave, initial, onCancel }) => {
           disabled={loading}
           min={new Date().toISOString().split('T')[0]}
           style={{
-            borderColor: errors.dueDate ? '#ef4444' : undefined
+            borderColor: errors.dueDate ? '#ef4444' : undefined,
+            cursor: 'pointer'
           }}
         />
         {errors.dueDate && (
-          <div style={{ color: '#ef4444', fontSize: '0.875rem', marginTop: 'var(--space-1)' }}>
+          <div style={{ 
+            color: 'var(--error)', 
+            fontSize: '0.8125rem', 
+            marginTop: 'var(--space-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)'
+          }}>
+            <span>⚠️</span>
             {errors.dueDate}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-6)' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end', marginTop: 'var(--space-8)', paddingTop: 'var(--space-6)', borderTop: '1px solid var(--gray-200)' }}>
         {onCancel && (
           <button 
             type="button" 

@@ -157,35 +157,45 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-6);
   border: none;
-  border-radius: var(--radius);
-  font-weight: 500;
-  font-size: 0.875rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.9375rem;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .btn-primary {
   background: var(--primary);
   color: var(--white);
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--primary-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-secondary {
-  background: var(--gray-100);
+  background: var(--white);
   color: var(--gray-700);
+  border: 2px solid var(--gray-300);
 }
 
-.btn-secondary:hover {
-  background: var(--gray-200);
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-400);
+  transform: translateY(-1px);
 }
 
 .btn-success {
@@ -229,34 +239,60 @@ body {
 
 /* Forms */
 .form-group {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .form-label {
   display: block;
-  font-weight: 500;
-  color: var(--gray-700);
-  margin-bottom: var(--space-2);
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: var(--space-3);
+  font-size: 0.9375rem;
 }
 
 .form-input {
   width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius);
-  font-size: 0.875rem;
+  padding: var(--space-4);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
   transition: all 0.2s ease;
+  background: var(--white);
+  font-family: inherit;
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  background: var(--white);
+}
+
+.form-input::placeholder {
+  color: var(--gray-400);
+  font-size: 0.9375rem;
 }
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.form-input[type="date"] {
+  cursor: pointer;
+  position: relative;
+}
+
+.form-input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  font-size: 1.1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.form-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 /* Task List */
@@ -625,7 +661,7 @@ body {
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
-.form-label {
+.auth-form .form-label {
   position: absolute;
   left: var(--space-4);
   top: 50%;
@@ -638,8 +674,8 @@ body {
   padding: 0 var(--space-2);
 }
 
-.form-input:focus + .form-label,
-.form-input:not(:placeholder-shown) + .form-label {
+.auth-form .form-input:focus + .form-label,
+.auth-form .form-input:not(:placeholder-shown) + .form-label {
   top: 0;
   font-size: 0.875rem;
   color: var(--primary);

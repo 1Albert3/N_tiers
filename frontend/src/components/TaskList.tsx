@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTasks, createTask, toggleTask, deleteTask } from '../api';
+import { fetchTasks, createTask, toggleTask, deleteTask, updateTask } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 import TaskForm from './TaskForm';
 
@@ -56,8 +56,7 @@ const TaskList: React.FC = () => {
   async function handleUpdate(payload: any) {
     if (!editingTask) return;
     try {
-      // Assuming updateTask API exists
-      // await updateTask(editingTask.id, payload, token || undefined);
+      await updateTask(editingTask.id, payload, token || undefined);
       await load();
       setEditingTask(null);
       setShowForm(false);
